@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Planificador de Proyectos Inmobiliarios</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ef;--bg2:#eceae4;--white:#ffffff;
+  --ink:#1c1a17;--ink2:#4a4740;--ink3:#8a8780;--line:#d8d4cc;
+  --teal:#1a5f6e;--teal2:#227080;--teal-lt:#e8f4f7;
+  --red:#c0392b;--red-lt:#fdf0ee;--amber:#b7620a;--amber-lt:#fef4e8;
+  --green:#1a7a4a;--green-lt:#eaf6f0;--gray-lt:#f0eeea;
+  --shadow:0 2px 8px rgba(0,0,0,0.08);--shadow-lg:0 8px 32px rgba(0,0,0,0.12)
+}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px}
+h1,h2,h3{font-family:'Libre Baskerville',serif}
+button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:pointer}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:248px;flex-shrink:0;background:#1c1a17;color:#d8d4cc;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-brand{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.sidebar-brand h1{font-size:14px;color:#f0eeea;line-height:1.35}
+.sidebar-brand span{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#5a5750}
+.sidebar-section{padding:12px 14px 5px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#5a5750}
+.proj-list{flex:1;overflow-y:auto;padding:4px 8px 12px}
+.proj-list::-webkit-scrollbar{width:3px}
+.proj-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+/* Ciudad group */
+.city-group{margin-bottom:2px}
+.city-header{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:all 0.14s;user-select:none}
+.city-header:hover{background:rgba(255,255,255,0.04)}
+.city-arrow{font-size:8px;color:#5a5750;transition:transform 0.2s;display:inline-block;width:10px;flex-shrink:0}
+.city-arrow.open{transform:rotate(90deg)}
+.city-name{flex:1;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:#7a7770}
+.city-count{font-size:10px;color:#4a4740;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:8px}
+.city-projects{padding-left:8px;border-left:1px solid rgba(255,255,255,0.06);margin-left:10px}
+
+/* Proyecto item */
+.proj-item{padding:7px 9px;border-radius:5px;cursor:pointer;transition:all 0.14s;font-size:12px;color:#908d86;display:flex;align-items:center;gap:7px;border:1px solid transparent;margin-bottom:1px}
+.proj-item:hover{background:rgba(255,255,255,0.05);color:#d8d4cc}
+.proj-item.active{background:rgba(26,95,110,0.35);color:#fff;border-color:rgba(26,95,110,0.5)}
+.proj-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.proj-name{flex:1;line-height:1.3}
+.proj-count{font-size:10px;color:rgba(255,255,255,0.25);flex-shrink:0}
+.proj-item:hover .proj-del-btn{color:#e05c5c !important}
+.proj-del-btn:hover{background:rgba(224,92,92,0.15) !important;color:#e05c5c !important}
+
+.sidebar-bottom{padding:6px 8px 14px;display:flex;flex-direction:column;gap:5px}
+.sidebar-btn{width:100%;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:500;transition:all 0.15s;text-align:left;border:none}
+.sbtn-new{background:rgba(26,95,110,0.25);border:1px solid rgba(26,95,110,0.4) !important;color:#90c4cc}
+.sbtn-new:hover{background:rgba(26,95,110,0.4)}
+.sbtn-export{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1) !important;color:#908d86}
+.sbtn-export:hover{background:rgba(255,255,255,0.09);color:#d8d4cc}
+.sync-bar{border-top:1px solid rgba(255,255,255,0.07);padding:9px 14px;display:flex;align-items:center;gap:7px}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sync-dot.connected{background:#5cba8a;box-shadow:0 0 5px rgba(92,186,138,0.45)}
+.sync-dot.syncing{background:#e09a5c;animation:pulse 1s infinite}
+.sync-dot.error{background:#e05c5c}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.sync-text{font-size:10px;color:#5a5750;flex:1}
+.sync-time{font-size:10px;color:rgba(255,255,255,0.15)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--white);border-bottom:1px solid var(--line);padding:0 26px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:var(--shadow)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-left h2{font-size:19px;color:var(--ink)}
+.badge-proj{font-size:11px;background:var(--teal-lt);color:var(--teal);padding:2px 10px;border-radius:20px;font-weight:600}
+.badge-progress{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:3px 10px 3px 4px;font-size:11px;font-weight:600;color:var(--ink2)}
+.badge-progress-bar{width:52px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;flex-shrink:0}
+.badge-progress-fill{height:100%;border-radius:3px;transition:width 0.3s}
+.badge-overdue{display:flex;align-items:center;gap:5px;background:var(--red-lt);color:var(--red);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;max-width:260px;overflow:hidden;cursor:default}
+.badge-overdue-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.content{flex:1;overflow-y:auto;padding:22px 26px 40px}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+
+/* ── SETUP ── */
+.setup-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
+.setup-card{background:var(--white);border-radius:14px;box-shadow:var(--shadow-lg);padding:38px;max-width:500px;width:100%;border-top:4px solid var(--teal)}
+.setup-card h2{font-size:24px;color:var(--ink);margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--ink3);margin-bottom:24px;line-height:1.6}
+.setup-steps{background:var(--bg);border-radius:10px;padding:18px;margin-bottom:18px}
+.setup-step{display:flex;gap:10px;margin-bottom:12px}
+.setup-step:last-child{margin-bottom:0}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--teal);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-text{font-size:13px;color:var(--ink2);line-height:1.5}
+.step-text code{background:var(--bg2);padding:1px 5px;border-radius:3px;font-size:11.5px;font-family:monospace;color:var(--teal)}
+.setup-field{margin-bottom:14px}
+.setup-field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:5px}
+.setup-field input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px 13px;font-size:13px;color:var(--ink);outline:none;transition:border 0.15s}
+.setup-field input:focus{border-color:var(--teal);background:#fff}
+.setup-error{background:var(--red-lt);border:1px solid rgba(192,57,43,0.2);border-radius:7px;padding:11px 13px;font-size:13px;color:var(--red);margin-bottom:14px;word-break:break-word}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 15px;border-radius:6px;font-size:13px;font-weight:500;border:none;transition:all 0.15s;cursor:pointer}
+.btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{background:var(--teal2)}.btn-primary:disabled{opacity:0.55;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--ink2);border:1px solid var(--line)}.btn-outline:hover{background:var(--bg2)}
+.btn-ghost{background:transparent;color:var(--ink3);border:none;padding:5px 9px}.btn-ghost:hover{background:var(--bg2);color:var(--ink2)}
+.btn-danger{background:var(--red-lt);color:var(--red);border:1px solid rgba(192,57,43,0.2)}.btn-danger:hover{background:rgba(192,57,43,0.14)}
+.btn-sm{padding:5px 11px;font-size:12px}.btn-xs{padding:3px 8px;font-size:11px;border-radius:4px}
+
+/* ── ACTIVITY ── */
+.activity-group{margin-bottom:18px;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow)}
+.activity-header{display:flex;align-items:center;gap:9px;padding:12px 16px;background:var(--ink);cursor:pointer;user-select:none}
+.activity-header h3{font-size:13.5px;color:#f0eeea;flex:1;letter-spacing:0.2px}
+.activity-count{font-size:10px;background:rgba(255,255,255,0.11);color:#c0bdb6;padding:2px 8px;border-radius:10px}
+.act-actions{display:flex;gap:3px;margin-left:6px}
+.act-icon-btn{background:none;border:none;color:#777;padding:4px 5px;border-radius:4px;cursor:pointer;font-size:12px;transition:all 0.13s}
+.act-icon-btn:hover{color:#e0ddd8;background:rgba(255,255,255,0.09)}
+.act-icon-btn.del:hover{color:#e05c5c}
+.tasks-table-head{display:grid;grid-template-columns:44px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
+.th{padding:7px 11px;font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);font-weight:600}
+.task-row-wrap{border-bottom:1px solid var(--line)}.task-row-wrap:last-child{border-bottom:none}
+.task-row{display:grid;grid-template-columns:44px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
+.task-row:hover{background:var(--bg)}.task-row.expanded{background:var(--gray-lt)}
+.td{padding:9px 11px;font-size:13px;overflow:hidden}
+.td-num{color:var(--ink3);font-size:11.5px;text-align:center}
+.task-name{font-weight:500;color:var(--ink);line-height:1.3}
+.task-desc-preview{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
+.prio-badge{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;font-size:10.5px;font-weight:700}
+.prio-1{background:var(--red-lt);color:var(--red)}.prio-2{background:var(--amber-lt);color:var(--amber)}
+.prio-3{background:var(--green-lt);color:var(--green)}.prio-4{background:var(--bg2);color:var(--ink3)}
+.status-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.s-pending{background:var(--bg2);color:var(--ink3)}.s-inprogress{background:var(--teal-lt);color:var(--teal)}
+.s-done{background:var(--green-lt);color:var(--green)}.s-blocked{background:var(--red-lt);color:var(--red)}
+.td-date{font-size:11.5px;color:var(--ink2)}
+.date-label{font-size:9.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:1px}
+.date-overdue{color:var(--red);font-weight:600}
+
+/* ── TASK DETAIL ── */
+.task-detail{padding:16px 18px 18px;background:var(--white);border-top:2px solid var(--teal);animation:slideDown 0.16s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:16px}
+.detail-field{display:flex;flex-direction:column;gap:4px}
+.detail-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);font-weight:600}
+.detail-input{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;font-size:13px;color:var(--ink);outline:none;transition:border 0.14s;width:100%}
+.detail-input:focus{border-color:var(--teal);background:#fff}
+.log-section-title{font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:9px;text-transform:uppercase;letter-spacing:1px}
+.log-entry{display:flex;gap:10px;margin-bottom:9px}
+.log-date{font-size:11px;color:var(--white);font-weight:700;flex-shrink:0;width:auto;padding:3px 9px;background:var(--teal);border-radius:4px;align-self:flex-start;margin-top:6px;letter-spacing:0.3px}
+.log-text{flex:1;font-size:13px;color:var(--ink2);line-height:1.5;background:var(--bg);border-radius:5px;padding:7px 11px}
+.log-del{flex-shrink:0;background:none;border:none;color:var(--ink3);cursor:pointer;font-size:12px;padding:3px;border-radius:4px}
+.log-del:hover{color:var(--red);background:var(--red-lt)}
+.log-edit{flex-shrink:0;background:none;border:none;color:var(--ink3);cursor:pointer;font-size:12px;padding:3px;border-radius:4px}
+.log-edit:hover{color:var(--teal);background:var(--teal-lt)}
+.log-editing{display:flex;flex-direction:column;gap:6px;flex:1}
+.log-edit-inp{background:#fff;border:1px solid var(--teal);border-radius:5px;padding:7px 11px;font-size:13px;color:var(--ink);outline:none;resize:none;min-height:56px;line-height:1.5;font-family:inherit}
+.log-edit-actions{display:flex;gap:6px;justify-content:flex-end}
+.log-add-row{display:flex;gap:7px;margin-top:9px}
+.log-date-inp{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;font-size:12px;color:var(--ink);outline:none;width:126px}
+.log-date-inp:focus{border-color:var(--teal)}
+.log-text-inp{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;font-size:13px;color:var(--ink);outline:none;resize:none;min-height:56px;line-height:1.5}
+.log-text-inp:focus{border-color:var(--teal);background:#fff}
+.detail-actions{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.add-task-row{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--bg);border-top:1px dashed var(--line);cursor:pointer}
+.add-task-inp{flex:1;background:transparent;border:none;border-bottom:1px solid var(--line);padding:5px 4px;font-size:13px;color:var(--ink);outline:none}
+.add-task-inp:focus{border-color:var(--teal)}
+.add-task-inp::placeholder{color:var(--ink3)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.42);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal{background:var(--white);border-radius:11px;box-shadow:var(--shadow-lg);width:100%;max-width:420px;overflow:hidden}
+.modal-head{padding:18px 22px 0;display:flex;justify-content:space-between;align-items:center}
+.modal-head h3{font-size:17px}
+.modal-body{padding:16px 22px;display:flex;flex-direction:column;gap:13px}
+.modal-foot{padding:0 22px 18px;display:flex;justify-content:flex-end;gap:8px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600}
+.field input,.field select{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 11px;font-size:13px;color:var(--ink);outline:none;transition:border 0.14s}
+.field input:focus,.field select:focus{border-color:var(--teal);background:#fff}
+.color-opts{display:flex;gap:7px;flex-wrap:wrap}
+.color-dot-btn{width:22px;height:22px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:border-color 0.13s}
+.color-dot-btn.sel{border-color:var(--ink)}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:9px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:13px;pointer-events:none}
+.search-inp{width:100%;background:var(--white);border:1px solid var(--line);border-radius:6px;padding:7px 11px 7px 31px;font-size:13px;color:var(--ink);outline:none;transition:border 0.14s}
+.search-inp:focus{border-color:var(--teal)}
+.filter-select{background:var(--white);border:1px solid var(--line);border-radius:6px;padding:7px 11px;font-size:13px;color:var(--ink2);outline:none;cursor:pointer}
+.stat-pills{display:flex;gap:12px;font-size:12px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:55%;gap:11px;color:var(--ink3)}
+.empty-icon{font-size:44px}
+.empty-state h3{font-size:19px;color:var(--ink2)}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:14px}
+.spinner{width:38px;height:38px;border:3px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TABS ─────────────────────────── */
+.proj-tabs{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:18px;flex-shrink:0}
+.proj-tab{padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--ink3);transition:color 0.15s,border-color 0.15s;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap}
+.proj-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.proj-tab:hover:not(.active){color:var(--ink2)}
+
+/* ── TIMELINE GANTT ──────────────── */
+.tl-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.tl-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-shrink:0;flex-wrap:wrap}
+.tl-header h3{margin:0;font-size:14px;font-weight:700;color:var(--ink2)}
+.tl-legend{display:flex;gap:12px;flex-wrap:wrap}
+.tl-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3)}
+.tl-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.tl-controls{display:flex;gap:8px;margin-left:auto}
+.tl-scroll{flex:1;overflow:auto;min-height:0}
+.tl-table{min-width:900px;width:100%}
+.tl-axis-row{display:flex;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10}
+.tl-act-label{width:220px;min-width:220px;padding:6px 10px;font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.5px;border-right:1px solid var(--line);flex-shrink:0}
+.tl-months{flex:1;display:flex;position:relative}
+.tl-month{flex:1;text-align:center;font-size:11px;color:var(--ink3);padding:6px 2px;border-right:1px solid rgba(255,255,255,0.05);font-weight:600;min-width:32px}
+.tl-month.current-month{color:var(--teal);background:rgba(20,160,180,0.06)}
+.tl-year-row{display:flex;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10}
+.tl-year-cell{font-size:12px;font-weight:700;color:var(--ink);padding:4px 10px;border-right:1px solid var(--line);background:var(--surf)}
+.tl-activity-row{display:flex;align-items:stretch;border-bottom:1px solid var(--line);min-height:38px;transition:background 0.1s}
+.tl-activity-row:hover{background:rgba(255,255,255,0.02)}
+.tl-act-name{width:220px;min-width:220px;padding:6px 10px;font-size:12px;color:var(--ink2);border-right:1px solid var(--line);flex-shrink:0;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer}
+.tl-act-name:hover .tl-act-toggle{color:var(--teal)}
+.tl-act-name-text{font-weight:600;color:var(--ink);line-height:1.3}
+.tl-act-name-tasks{font-size:10px;color:var(--ink3)}
+.tl-act-toggle{font-size:9px;color:var(--ink3);margin-right:4px}
+.tl-bars{flex:1;position:relative;display:flex;align-items:center;padding:4px 0;overflow:visible}
+.tl-bar{position:absolute;height:16px;border-radius:3px;cursor:pointer;transition:filter 0.1s,height 0.1s;display:flex;align-items:center;overflow:hidden}
+.tl-bar:hover{filter:brightness(1.25);height:20px;z-index:5}
+.tl-bar-label{font-size:9px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;pointer-events:none}
+.tl-today-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,120,50,0.8);z-index:8;pointer-events:none}
+.tl-today-line::before{content:"HOY";position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,120,50,0.9);font-weight:700;white-space:nowrap}
+.tl-task-rows{display:flex;flex-direction:column}
+.tl-task-row{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,0.03);min-height:28px}
+.tl-task-name{width:220px;min-width:220px;padding:4px 10px 4px 24px;font-size:11px;color:var(--ink3);border-right:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;gap:4px}
+.tl-task-bars{flex:1;position:relative;display:flex;align-items:center}
+.tl-bar-task{position:absolute;height:10px;border-radius:2px;cursor:pointer;opacity:0.85}
+.tl-bar-task:hover{opacity:1;height:13px}
+.tl-empty-range{flex:1;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:11px;font-style:italic}
+.tl-tooltip{position:fixed;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--ink);z-index:1000;pointer-events:none;max-width:260px;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.tl-tooltip-title{font-weight:700;margin-bottom:5px;color:var(--teal)}
+.tl-no-dates{display:flex;align-items:center;justify-content:center;height:200px;color:var(--ink3);font-size:13px;font-style:italic}
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+class SupabaseClient {
+  constructor(url, key) {
+    this.url = url.replace(/\/$/, "");
+    this.key = key;
+    this.h = {"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key};
+  }
+  async select(table, filter="") {
+    const res = await fetch(`${this.url}/rest/v1/${table}${filter?"?"+filter:""}`, {headers:this.h});
+    if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    return res.json();
+  }
+  async upsert(table, body) {
+    const res = await fetch(`${this.url}/rest/v1/${table}`, {
+      method:"POST",
+      headers:{...this.h,"Prefer":"resolution=merge-duplicates,return=minimal"},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    return true;
+  }
+  async test() {
+    const res = await fetch(`${this.url}/rest/v1/planificador?limit=1`, {headers:this.h});
+    if(res.status===401) throw new Error("API Key inválida.");
+    if(res.status===404) throw new Error("URL inválida o tabla no existe.");
+    if(!res.ok) throw new Error(`Error HTTP ${res.status}`);
+    return true;
+  }
+}
+
+let db = null;
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const today = () => new Date().toISOString().slice(0,10);
+const fmtDate = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return `${day}/${m}/${y}`; };
+const isOverdue = d => d && d < today();
+const STATUS_OPTS = ["Pendiente","En Proceso","Completado","Bloqueado"];
+const STATUS_CLASS = {"Pendiente":"s-pending","En Proceso":"s-inprogress","Completado":"s-done","Bloqueado":"s-blocked"};
+const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
+const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
+const getCity = name => name.split(" - ")[0].trim();
+const getShortName = name => { const parts = name.split(" - "); return parts.length > 1 ? parts.slice(1).join(" - ") : name; };
+
+function exportCSV(projects) {
+  const rows=[["Ciudad","Proyecto","Actividad","N°","Tarea/Restricción","Última nota","Prioridad","Estado","Responsable","Duración","Fecha Inicio E","Fecha Término E","Fecha Término R","Informe Socios"]];
+  let n=1;
+  for(const p of projects) for(const a of p.activities) for(const t of a.tasks){
+    const last=t.log&&t.log.length>0?t.log[t.log.length-1]:null;
+    rows.push([getCity(p.name),getShortName(p.name),a.name,n++,t.tarea,last?`${last.date}: ${last.text}`:"",t.prioridad,t.estado,t.responsable||"",t.duracion||"",t.fechaInicioE||"",t.fechaTerminoE||"",t.fechaTerminoR||"",t.informeSocio?"Sí":"No"]);
+  }
+  const csv=rows.map(r=>r.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="planificador.csv";a.click();URL.revokeObjectURL(url);
+}
+
+// ── SETUP ──────────────────────────────────────────────────────────────────
+function SetupScreen({onSetup}) {
+  const [url,setUrl]=useState("");
+  const [key,setKey]=useState("");
+  const [testing,setTesting]=useState(false);
+  const [error,setError]=useState("");
+  const handleConnect = async () => {
+    const u=url.trim().replace(/\/$/, "");
+    const k=key.trim();
+    if(!u||!k){setError("Debes ingresar la URL y la Key.");return;}
+    if(!u.startsWith("https://")){setError("La URL debe empezar con https://");return;}
+    if(!k.startsWith("eyJ")){setError("La Anon Key debe empezar con eyJ...");return;}
+    setTesting(true);setError("");
+    try {
+      const client=new SupabaseClient(u,k);
+      await client.test();
+      localStorage.setItem("sb_url",u);
+      localStorage.setItem("sb_key",k);
+      onSetup(u,k);
+    } catch(e){setError("⚠️ "+e.message);}
+    setTesting(false);
+  };
+  return (
+    <div className="setup-screen">
+      <div className="setup-card">
+        <h2>Conectar Base de Datos</h2>
+        <p className="setup-sub">Ingresa tus credenciales de Supabase para activar la sincronización en tiempo real.</p>
+        <div className="setup-steps">
+          <div className="setup-step"><div className="step-num">1</div><div className="step-text">Supabase → <code>Project Settings</code> → <code>Data API</code></div></div>
+          <div className="setup-step"><div className="step-num">2</div><div className="step-text">Copia la <strong>Project URL</strong></div></div>
+          <div className="setup-step"><div className="step-num">3</div><div className="step-text">En <code>API Keys</code> → copia la key <strong>anon</strong> (empieza con eyJ...)</div></div>
+        </div>
+        {error&&<div className="setup-error">{error}</div>}
+        <div className="setup-field">
+          <label>Project URL</label>
+          <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxxxxxxxxxx.supabase.co" onKeyDown={e=>e.key==="Enter"&&handleConnect()}/>
+        </div>
+        <div className="setup-field">
+          <label>Anon Key</label>
+          <input value={key} onChange={e=>setKey(e.target.value)} placeholder="eyJhbGci..." onKeyDown={e=>e.key==="Enter"&&handleConnect()}/>
+        </div>
+        <button className="btn btn-primary" style={{width:"100%",justifyContent:"center",padding:"11px",marginTop:4}} onClick={handleConnect} disabled={testing}>
+          {testing?"⏳ Conectando...":"✓ Conectar y Guardar"}
+        </button>
+        <p style={{fontSize:11,color:"var(--ink3)",marginTop:12,textAlign:"center"}}>Las credenciales se guardan solo en tu navegador.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── CITY SIDEBAR ────────────────────────────────────────────────────────────
+function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
+  const firstCity = projects.length > 0 ? getCity(projects[0].name) : null;
+  const [openCities, setOpenCities] = useState(() => {
+    const init = {};
+    if(firstCity) init[firstCity] = true;
+    return init;
+  });
+
+  // Auto-open city of selected project
+  useEffect(() => {
+    if(!selId) return;
+    const p = projects.find(p => p.id === selId);
+    if(!p) return;
+    const city = getCity(p.name);
+    setOpenCities(prev => ({...prev, [city]: true}));
+  }, [selId]);
+
+  // Group by city, preserve order
+  const cityMap = {};
+  const cityOrder = [];
+  for(const p of projects) {
+    const city = getCity(p.name);
+    if(!cityMap[city]) { cityMap[city] = []; cityOrder.push(city); }
+    cityMap[city].push(p);
+  }
+
+  const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
+
+  return (
+    <div className="proj-list">
+      {cityOrder.map(city => {
+        const projs = cityMap[city];
+        const isOpen = !!openCities[city];
+        const hasActive = projs.some(p => p.id === selId);
+        return (
+          <div key={city} className="city-group">
+            <div className="city-header" onClick={() => toggle(city)}>
+              <span className={`city-arrow${isOpen?" open":""}`}>▶</span>
+              <span className="city-name" style={hasActive?{color:"#a0c8d0"}:{}}>{city}</span>
+              <span className="city-count">{projs.length}</span>
+            </div>
+            {isOpen && (
+              <div className="city-projects">
+                {projs.map(p => (
+                  <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
+                    <span className="proj-dot" style={{background:p.color}}/>
+                    <span className="proj-name">{getShortName(p.name)}</span>
+                    <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+                    <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
+                      style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+                      className="proj-del-btn">🗑</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── TASK ROW ────────────────────────────────────────────────────────────────
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
+  const [open,setOpen]=useState(false);
+  const [form,setForm]=useState({...task,log:task.log||[]});
+  const [newLogDate,setNewLogDate]=useState(today());
+  const [newLogText,setNewLogText]=useState("");
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const saveAndClose=()=>{onUpdate(actId,{...form});setOpen(false);};
+  const addLog=()=>{
+    if(!newLogText.trim())return;
+    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim()}]}));
+    setNewLogText("");
+  };
+  const delLog=lid=>setForm(f=>({...f,log:f.log.filter(l=>l.id!==lid)}));
+  const [editingLogId,setEditingLogId]=useState(null);
+  const [editLogText,setEditLogText]=useState("");
+  const startEditLog=(l)=>{setEditingLogId(l.id);setEditLogText(l.text);};
+  const saveEditLog=()=>setForm(f=>({...f,log:f.log.map(l=>l.id===editingLogId?{...l,text:editLogText}:l)}))|| setEditingLogId(null);
+  const cancelEditLog=()=>setEditingLogId(null);
+  const lastLog=form.log.length>0?form.log[form.log.length-1]:null;
+  const overdue=isOverdue(task.fechaTerminoE)&&task.estado!=="Completado";
+  return (
+    <div className="task-row-wrap">
+      <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
+        <div className="td td-num">{globalIdx}</div>
+        <div className="td">
+          <div className="task-name">{task.tarea}</div>
+          {lastLog&&<div className="task-desc-preview">{fmtDate(lastLog.date)} — {lastLog.text}</div>}
+        </div>
+        <div className="td" style={{textAlign:"center"}}><span className={`prio-badge prio-${Math.min(task.prioridad||3,4)}`}>{task.prioridad||"—"}</span></div>
+        <div className="td"><span className={`status-chip ${STATUS_CLASS[task.estado]||"s-pending"}`}>{task.estado}</span></div>
+        <div className="td td-date"><div className="date-label">Inicio</div>{fmtDate(task.fechaInicioE)}</div>
+        <div className="td td-date"><div className="date-label">Término</div><span className={overdue?"date-overdue":""}>{fmtDate(task.fechaTerminoE)}</span></div>
+        <div className="td"><span style={{fontSize:12,color:"var(--ink2)"}}>{task.responsable||"—"}</span></div>
+        <div className="td" style={{textAlign:"center"}}>{task.informeSocio&&<span title="Informe Socios" style={{fontSize:13,background:"rgba(var(--teal-rgb,20,160,180),0.15)",color:"var(--teal)",borderRadius:4,padding:"1px 6px",fontSize:11,fontWeight:600}}>📋 IS</span>}</div>
+      </div>
+      {open&&(
+        <div className="task-detail" onClick={e=>e.stopPropagation()}>
+          <div className="detail-grid">
+            <div className="detail-field" style={{gridColumn:"1/-1"}}>
+              <div className="detail-label">Tarea / Restricción</div>
+              <input className="detail-input" value={form.tarea} onChange={e=>set("tarea",e.target.value)}/>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Responsable</div>
+              <select className="detail-input" value={form.responsable||""} onChange={e=>set("responsable",e.target.value)}>
+                <option value="">— Sin asignar —</option>
+                {RESPONSABLES.map(r=><option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Prioridad</div>
+              <select className="detail-input" value={form.prioridad} onChange={e=>set("prioridad",Number(e.target.value))}>
+                <option value={1}>1 — Alta</option><option value={2}>2 — Media</option>
+                <option value={3}>3 — Normal</option><option value={4}>4 — Baja</option>
+              </select>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Estado</div>
+              <select className="detail-input" value={form.estado} onChange={e=>set("estado",e.target.value)}>
+                {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Duración (días)</div>
+              <input className="detail-input" type="number" value={form.duracion||""} onChange={e=>set("duracion",e.target.value)}/>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Fecha Inicio (E)</div>
+              <input className="detail-input" type="date" value={form.fechaInicioE||""} onChange={e=>set("fechaInicioE",e.target.value)}/>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Fecha Término (E)</div>
+              <input className="detail-input" type="date" value={form.fechaTerminoE||""} onChange={e=>set("fechaTerminoE",e.target.value)}/>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label">Fecha Término Real</div>
+              <input className="detail-input" type="date" value={form.fechaTerminoR||""} onChange={e=>set("fechaTerminoR",e.target.value)}/>
+            </div>
+            <div className="detail-field" style={{gridColumn:"1/-1"}}>
+              <label style={{display:"flex",alignItems:"center",gap:9,cursor:"pointer",userSelect:"none"}}>
+                <input type="checkbox" checked={!!form.informeSocio} onChange={e=>set("informeSocio",e.target.checked)}
+                  style={{width:16,height:16,accentColor:"var(--teal)",cursor:"pointer",flexShrink:0}}/>
+                <span style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>📋 Informe Socios</span>
+                <span style={{fontSize:11,color:"var(--ink3)",fontStyle:"italic"}}>— incluir en reporte a socios</span>
+              </label>
+            </div>
+
+          </div>
+          <div style={{height:1,background:"var(--line)",margin:"12px 0"}}/>
+          <div className="log-section-title">Bitácora de Avance</div>
+          {form.log.length===0&&<p style={{fontSize:12,color:"var(--ink3)",marginBottom:10}}>Sin entradas aún.</p>}
+          {[...form.log].reverse().map(l=>(
+            <div className="log-entry" key={l.id}>
+              <div className="log-date">{fmtDate(l.date)}</div>
+              {editingLogId===l.id?(
+                <div className="log-editing">
+                  <textarea className="log-edit-inp" value={editLogText} onChange={e=>setEditLogText(e.target.value)} autoFocus onKeyDown={e=>{if(e.key==="Escape")cancelEditLog();if(e.key==="Enter"&&e.ctrlKey){setForm(f=>({...f,log:f.log.map(ll=>ll.id===l.id?{...ll,text:editLogText}:ll)}));setEditingLogId(null);}}}/>
+                  <div className="log-edit-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={cancelEditLog}>Cancelar</button>
+                    <button className="btn btn-primary btn-sm" onClick={()=>{setForm(f=>({...f,log:f.log.map(ll=>ll.id===l.id?{...ll,text:editLogText}:ll)}));setEditingLogId(null);}}>Guardar</button>
+                  </div>
+                </div>
+              ):(
+                <div className="log-text">{l.text}</div>
+              )}
+              <div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0}}>
+                <button className="log-edit" title="Editar nota" onClick={()=>startEditLog(l)}>✏</button>
+                <button className="log-del" title="Eliminar nota" onClick={()=>delLog(l.id)}>✕</button>
+              </div>
+            </div>
+          ))}
+          <div className="log-add-row">
+            <input type="date" className="log-date-inp" value={newLogDate} onChange={e=>setNewLogDate(e.target.value)}/>
+            <textarea className="log-text-inp" placeholder="Agregar nota... (Ctrl+Enter)" value={newLogText} onChange={e=>setNewLogText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&e.ctrlKey)addLog();}}/>
+            <button className="btn btn-primary btn-sm" style={{alignSelf:"flex-end",flexShrink:0}} onClick={addLog}>+ Agregar</button>
+          </div>
+          <div className="detail-actions">
+            <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("¿Eliminar esta tarea?"))onDelete(actId,task.id);}}>🗑 Eliminar</button>
+            <div style={{display:"flex",gap:7}}>
+              <button className="btn btn-outline btn-sm" onClick={()=>{setForm({...task,log:task.log||[]});setOpen(false);}}>Cancelar</button>
+              <button className="btn btn-primary btn-sm" onClick={saveAndClose}>Guardar cambios</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx}) {
+  const [collapsed,setCollapsed]=useState(true);
+  const [addingTask,setAddingTask]=useState(false);
+  const [newTaskName,setNewTaskName]=useState("");
+  const [editingName,setEditingName]=useState(false);
+  const [nameVal,setNameVal]=useState(activity.name);
+  const confirmAdd=()=>{
+    if(!newTaskName.trim())return setAddingTask(false);
+    onAddTask(activity.id,newTaskName.trim());
+    setNewTaskName("");setAddingTask(false);
+  };
+  const confirmRename=()=>{if(nameVal.trim())onRenameAct(activity.id,nameVal.trim());setEditingName(false);};
+  return (
+    <div className="activity-group">
+      <div className="activity-header" onClick={()=>!editingName&&setCollapsed(c=>!c)}>
+        <span style={{color:"#888",fontSize:10,transform:collapsed?"":"rotate(90deg)",transition:"transform 0.2s",display:"inline-block"}}>▶</span>
+        {actIdx&&<span style={{fontSize:11,color:"#666",background:"rgba(255,255,255,0.08)",borderRadius:4,padding:"1px 7px",flexShrink:0,fontFamily:"monospace"}}>{actIdx}</span>}
+        {editingName?(
+          <input value={nameVal} onChange={e=>setNameVal(e.target.value)} onBlur={confirmRename}
+            onKeyDown={e=>{if(e.key==="Enter")confirmRename();}} onClick={e=>e.stopPropagation()}
+            style={{background:"rgba(255,255,255,0.11)",border:"1px solid rgba(255,255,255,0.25)",borderRadius:4,padding:"3px 8px",color:"#fff",fontSize:13.5,fontFamily:"serif",flex:1,outline:"none"}} autoFocus/>
+        ):<h3>{activity.name}</h3>}
+        <span className="activity-count">{activity.tasks.length} tarea{activity.tasks.length!==1?"s":""}</span>
+        <div className="act-actions" onClick={e=>e.stopPropagation()}>
+          <button className="act-icon-btn" onClick={()=>{setEditingName(true);setCollapsed(false);}}>✏️</button>
+          <button className="act-icon-btn" onClick={()=>{setAddingTask(true);setCollapsed(false);}}>+</button>
+          <button className="act-icon-btn del" onClick={()=>{if(confirm(`¿Eliminar "${activity.name}"?`))onDeleteAct(activity.id);}}>🗑</button>
+        </div>
+      </div>
+      {!collapsed&&(
+        <>
+          <div className="tasks-table-head">
+            <div className="th" style={{textAlign:"center"}}>#</div>
+            <div className="th">Tarea / Restricción</div>
+            <div className="th" style={{textAlign:"center"}}>Prior.</div>
+            <div className="th">Estado</div>
+            <div className="th">Inicio</div>
+            <div className="th">Término Est.</div>
+            <div className="th">Responsable</div>
+            <div className="th" style={{textAlign:"center"}}>IS</div>
+          </div>
+          {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
+          {activity.tasks.map((task,i)=>(
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i}/>
+          ))}
+          {addingTask?(
+            <div className="add-task-row">
+              <input autoFocus className="add-task-inp" placeholder="Nombre de la tarea..." value={newTaskName}
+                onChange={e=>setNewTaskName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")confirmAdd();if(e.key==="Escape")setAddingTask(false);}}/>
+              <button className="btn btn-primary btn-xs" onClick={confirmAdd}>Agregar</button>
+              <button className="btn btn-outline btn-xs" onClick={()=>setAddingTask(false)}>✕</button>
+            </div>
+          ):(
+            <div className="add-task-row" onClick={()=>setAddingTask(true)}>
+              <span style={{color:"var(--ink3)",fontSize:12}}>+ Agregar tarea</span>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Modal({title,onClose,children,footer}) {
+  return (
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <div className="modal-head"><h3>{title}</h3><button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button></div>
+        <div className="modal-body">{children}</div>
+        {footer&&<div className="modal-foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+
+// ── TIMELINE VIEW ────────────────────────────────────────────────────────────
+const STATUS_COLOR_TL = {
+  "Completado":"#27ae60",
+  "En Proceso":"#17a2b8",
+  "Pendiente":"#888",
+  "Bloqueado":"#e74c3c",
+  "Pausado":"#f39c12",
+};
+const MONTH_NAMES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+function parseDate(s){if(!s||s.length<8)return null;try{const d=new Date(s);return isNaN(d)?null:d;}catch{return null;}}
+function datePx(date,startMs,totalMs,totalPx){
+  return Math.max(0,Math.min(totalPx,((date.getTime()-startMs)/totalMs)*totalPx));
+}
+
+function TimelineView({project}){
+  const [tooltip,setTooltip]=useState(null);
+  const [expanded,setExpanded]=useState({});
+  const containerRef=useRef(null);
+
+  // Collect all valid dates from all tasks
+  const allDates=[];
+  (project.activities||[]).forEach(a=>(a.tasks||[]).forEach(t=>{
+    [t.fechaInicioE,t.fechaTerminoE,t.fechaTerminoR].forEach(d=>{const p=parseDate(d);if(p)allDates.push(p);});
+  }));
+
+  if(allDates.length===0)return <div className="tl-no-dates">Sin fechas registradas en este proyecto.</div>;
+
+  const minDate=new Date(Math.min(...allDates.map(d=>d.getTime())));
+  const maxDate=new Date(Math.max(...allDates.map(d=>d.getTime())));
+  // Pad 1 month on each side
+  const startDate=new Date(minDate.getFullYear(),minDate.getMonth()-1,1);
+  const endDate=new Date(maxDate.getFullYear(),maxDate.getMonth()+2,1);
+  const today=new Date();
+  const totalMs=endDate.getTime()-startDate.getTime();
+
+  // Build list of months for axis
+  const months=[];
+  let cur=new Date(startDate);
+  while(cur<endDate){
+    months.push({year:cur.getFullYear(),month:cur.getMonth()});
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  }
+
+  // Activity status aggregation
+  function actStatus(act){
+    const tasks=act.tasks||[];
+    if(tasks.length===0)return "Pendiente";
+    if(tasks.every(t=>t.estado==="Completado"))return "Completado";
+    if(tasks.some(t=>t.estado==="Bloqueado"))return "Bloqueado";
+    if(tasks.some(t=>t.estado==="En Proceso"))return "En Proceso";
+    return "Pendiente";
+  }
+
+  const toggleExpand=(aid)=>setExpanded(e=>({...e,[aid]:!e[aid]}));
+
+  // Group months by year for axis
+  const years=[];
+  months.forEach(m=>{
+    const last=years[years.length-1];
+    if(!last||last.year!==m.year){years.push({year:m.year,count:1});}
+    else{last.count++;}
+  });
+
+  return(
+    <div className="tl-wrap">
+      <div className="tl-header">
+        <h3>📅 Línea de Tiempo — {project.name}</h3>
+        <div className="tl-legend">
+          {Object.entries(STATUS_COLOR_TL).map(([s,c])=>(
+            <div key={s} className="tl-legend-item">
+              <div className="tl-legend-dot" style={{background:c}}/>
+              <span>{s}</span>
+            </div>
+          ))}
+          <div className="tl-legend-item"><div className="tl-legend-dot" style={{background:"rgba(255,120,50,0.8)",borderRadius:"50%"}}/><span>Hoy</span></div>
+        </div>
+      </div>
+      {tooltip&&(
+        <div className="tl-tooltip" style={{top:tooltip.y+10,left:tooltip.x+10}}>
+          <div className="tl-tooltip-title">{tooltip.name}</div>
+          {tooltip.resp&&<div>👤 {tooltip.resp}</div>}
+          {tooltip.start&&<div>📅 Inicio: {tooltip.start}</div>}
+          {tooltip.end&&<div>🏁 Término E: {tooltip.end}</div>}
+          {tooltip.real&&<div>✅ Término R: {tooltip.real}</div>}
+          <div style={{marginTop:4}}><span style={{background:STATUS_COLOR_TL[tooltip.status]||"#888",color:"#fff",borderRadius:3,padding:"1px 7px",fontSize:11}}>{tooltip.status}</span></div>
+        </div>
+      )}
+      <div className="tl-scroll" ref={containerRef}>
+        <div className="tl-table">
+          {/* Year axis */}
+          <div className="tl-year-row">
+            <div className="tl-act-label" style={{borderRight:"1px solid var(--line)"}}>Actividad</div>
+            <div style={{flex:1,display:"flex"}}>
+              {years.map(y=>(
+                <div key={y.year} className="tl-year-cell" style={{flex:y.count}}>
+                  {y.year}
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Month axis */}
+          <div className="tl-axis-row" style={{position:"sticky",top:28,zIndex:9}}>
+            <div className="tl-act-label"/>
+            <div className="tl-months">
+              {months.map((m,i)=>(
+                <div key={i} className={"tl-month"+(m.year===today.getFullYear()&&m.month===today.getMonth()?" current-month":"")}>
+                  {MONTH_NAMES[m.month]}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity rows */}
+          {(project.activities||[]).map((act,ai)=>{
+            // Get date range for this activity
+            const actDates=[];
+            (act.tasks||[]).forEach(t=>{
+              [t.fechaInicioE,t.fechaTerminoE,t.fechaTerminoR].forEach(d=>{const p=parseDate(d);if(p)actDates.push(p);});
+            });
+            const hasDates=actDates.length>0;
+            const actStart=hasDates?new Date(Math.min(...actDates.map(d=>d.getTime()))):null;
+            const actEnd=hasDates?new Date(Math.max(...actDates.map(d=>d.getTime()))):null;
+            const status=actStatus(act);
+            const color=STATUS_COLOR_TL[status]||"#888";
+            const isExp=!!expanded[act.id];
+
+            return(
+              <React.Fragment key={act.id}>
+                <div className="tl-activity-row">
+                  <div className="tl-act-name" onClick={()=>act.tasks.length>0&&toggleExpand(act.id)}>
+                    {act.tasks.length>0&&<span className="tl-act-toggle">{isExp?"▼":"▶"}</span>}
+                    <div>
+                      <div className="tl-act-name-text">{ai+1}. {act.name}</div>
+                      <div className="tl-act-name-tasks">{act.tasks.length} tarea{act.tasks.length!==1?"s":""} · {status}</div>
+                    </div>
+                  </div>
+                  <div className="tl-bars" style={{overflow:"visible"}}>
+                    {/* Today line */}
+                    {today>=startDate&&today<=endDate&&(
+                      <div className="tl-today-line" style={{left:`${(today.getTime()-startDate.getTime())/totalMs*100}%`}}/>
+                    )}
+                    {/* Background grid lines per month */}
+                    {months.map((m,mi)=>(
+                      <div key={mi} style={{position:"absolute",left:`${(new Date(m.year,m.month,1).getTime()-startDate.getTime())/totalMs*100}%`,top:0,bottom:0,width:"1px",background:"rgba(255,255,255,0.04)"}}/>
+                    ))}
+                    {hasDates&&(
+                      <div
+                        className="tl-bar"
+                        style={{
+                          left:`${(actStart.getTime()-startDate.getTime())/totalMs*100}%`,
+                          width:`${Math.max(0.5,(actEnd.getTime()-actStart.getTime())/totalMs*100)}%`,
+                          background:color,
+                          opacity:status==="Completado"?0.7:1,
+                        }}
+                        onMouseMove={e=>setTooltip({
+                          x:e.clientX,y:e.clientY,
+                          name:act.name,
+                          start:actStart.toLocaleDateString("es-CL"),
+                          end:actEnd.toLocaleDateString("es-CL"),
+                          status,
+                        })}
+                        onMouseLeave={()=>setTooltip(null)}
+                      >
+                        <span className="tl-bar-label">{act.name}</span>
+                      </div>
+                    )}
+                    {!hasDates&&<div className="tl-empty-range">Sin fechas</div>}
+                  </div>
+                </div>
+                {/* Expanded task rows */}
+                {isExp&&(act.tasks||[]).map((task,ti)=>{
+                  const tStart=parseDate(task.fechaInicioE);
+                  const tEnd=parseDate(task.fechaTerminoE)||tStart;
+                  const tReal=parseDate(task.fechaTerminoR);
+                  const tColor=STATUS_COLOR_TL[task.estado]||"#888";
+                  return(
+                    <div key={task.id} className="tl-task-row">
+                      <div className="tl-task-name">
+                        <span style={{color:tColor,fontSize:8}}>●</span>
+                        <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={task.tarea}>{task.tarea}</span>
+                        {task.informeSocio&&<span title="Informe Socios" style={{fontSize:9,color:"var(--teal)",fontWeight:700,flexShrink:0}}>📋</span>}
+                      </div>
+                      <div className="tl-task-bars" style={{overflow:"visible"}}>
+                        {today>=startDate&&today<=endDate&&(
+                          <div style={{position:"absolute",top:0,bottom:0,width:"1px",background:"rgba(255,120,50,0.5)",left:`${(today.getTime()-startDate.getTime())/totalMs*100}%`}}/>
+                        )}
+                        {tStart&&(
+                          <>
+                            {/* Estimated bar */}
+                            <div
+                              className="tl-bar-task"
+                              style={{
+                                left:`${(tStart.getTime()-startDate.getTime())/totalMs*100}%`,
+                                width:`${Math.max(0.3,(((tEnd||tStart).getTime()-tStart.getTime())/totalMs)*100)}%`,
+                                background:tColor,
+                                top:"50%",transform:"translateY(-50%)",
+                              }}
+                              onMouseMove={e=>setTooltip({
+                                x:e.clientX,y:e.clientY,
+                                name:task.tarea,
+                                resp:task.responsable,
+                                start:tStart.toLocaleDateString("es-CL"),
+                                end:tEnd?tEnd.toLocaleDateString("es-CL"):null,
+                                real:tReal?tReal.toLocaleDateString("es-CL"):null,
+                                status:task.estado,
+                              })}
+                              onMouseLeave={()=>setTooltip(null)}
+                            />
+                            {/* Real end marker */}
+                            {tReal&&(
+                              <div style={{
+                                position:"absolute",
+                                left:`${(tReal.getTime()-startDate.getTime())/totalMs*100}%`,
+                                top:"50%",transform:"translateY(-50%) translateX(-50%)",
+                                width:8,height:8,borderRadius:"50%",
+                                background:"#27ae60",border:"2px solid #fff",zIndex:5,
+                              }}/>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ────────────────────────────────────────────────────────────────
+function App() {
+  const [projects,setProjects]=useState([]);
+  const [selId,setSelId]=useState(null);
+  const [syncStatus,setSyncStatus]=useState("syncing");
+  const [lastSync,setLastSync]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [showNewProj,setShowNewProj]=useState(false);
+  const [showNewAct,setShowNewAct]=useState(false);
+  const [newProjName,setNewProjName]=useState("");
+  const [newProjColor,setNewProjColor]=useState(COLORS[0]);
+  const [newProjCity,setNewProjCity]=useState("");
+  const [newProjCustomCity,setNewProjCustomCity]=useState("");
+  const [newActName,setNewActName]=useState("");
+  const [activeTab,setActiveTab]=useState("actividades");
+  const [search,setSearch]=useState("");
+  const [filterPrio,setFilterPrio]=useState("all");
+  const [filterStatus,setFilterStatus]=useState("all");
+  const saveTimer=useRef(null);
+  const pollTimer=useRef(null);
+  const lastServerUpdated=useRef(null);
+  const pendingSave=useRef(false);
+
+  const loadData=useCallback(async(silent=false)=>{
+    if(!db)return;
+    if(!silent)setSyncStatus("syncing");
+    try {
+      const rows=await db.select("planificador","id=eq.main");
+      if(rows.length===0){
+        const now=new Date().toISOString();
+        await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
+        lastServerUpdated.current=now;
+        setProjects(window.INITIAL_DATA);
+        if(window.INITIAL_DATA.length>0)setSelId(p=>p||window.INITIAL_DATA[0].id);
+      } else {
+        const serverTime=rows[0].updated_at;
+        const newData=rows[0].data;
+        if(!silent){
+          setProjects(newData);
+          setSelId(p=>p||(newData.length>0?newData[0].id:null));
+          lastServerUpdated.current=serverTime;
+        } else if(!pendingSave.current&&serverTime!==lastServerUpdated.current){
+          setProjects(newData);
+          setSelId(p=>p||(newData.length>0?newData[0].id:null));
+          lastServerUpdated.current=serverTime;
+        }
+      }
+      setSyncStatus("connected");
+      setLastSync(new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}));
+    } catch(e){console.error(e);if(!silent)setSyncStatus("error");}
+    setLoading(false);
+  },[]);
+
+  useEffect(()=>{
+    if(!db){setLoading(false);return;}
+    loadData();
+    pollTimer.current=setInterval(()=>loadData(true),10000);
+    return()=>clearInterval(pollTimer.current);
+  },[loadData]);
+
+  const saveProjects=useCallback((newProjects)=>{
+    if(!db)return;
+    clearTimeout(saveTimer.current);
+    pendingSave.current=true;
+    setSyncStatus("syncing");
+    saveTimer.current=setTimeout(async()=>{
+      try {
+        const now=new Date().toISOString();
+        await db.upsert("planificador",{id:"main",data:newProjects,updated_at:now});
+        lastServerUpdated.current=now;
+        pendingSave.current=false;
+        setSyncStatus("connected");
+        setLastSync(new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}));
+      } catch(e){console.error(e);pendingSave.current=false;setSyncStatus("error");}
+    },1500);
+  },[]);
+
+  const updateProjects=p=>{setProjects(p);saveProjects(p);};
+  const updActs=(pid,fn)=>updateProjects(projects.map(p=>p.id===pid?{...p,activities:fn(p.activities)}:p));
+  const addProject=()=>{
+    const city=(newProjCity==="otra"?newProjCustomCity:newProjCity).trim();
+    if(!city||!newProjName.trim())return;
+    const fullName=`${city} - ${newProjName.trim()}`;
+    const p={id:uid(),name:fullName,color:newProjColor,activities:[]};
+    updateProjects([...projects,p]);setSelId(p.id);
+    setShowNewProj(false);setNewProjName("");setNewProjCity("");setNewProjCustomCity("");
+  };
+  const addActivity=()=>{
+    if(!newActName.trim())return;
+    updActs(selId,acts=>[...acts,{id:uid(),name:newActName.trim(),tasks:[]}]);
+    setShowNewAct(false);setNewActName("");
+  };
+  const deleteProject=(pid)=>{
+    const remaining=projects.filter(p=>p.id!==pid);
+    updateProjects(remaining);
+    if(selId===pid)setSelId(remaining.length>0?remaining[0].id:null);
+  };
+  const renameAct=(aid,name)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,name}:a));
+  const deleteAct=(aid)=>updActs(selId,acts=>acts.filter(a=>a.id!==aid));
+  const addTask=(aid,tarea)=>{
+    const task={id:uid(),tarea,prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[]};
+    updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:[task,...a.tasks]}:a));
+  };
+  const updateTask=(aid,task)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.map(t=>t.id===task.id?task:t)}:a));
+  const deleteTask=(aid,tid)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.filter(t=>t.id!==tid)}:a));
+
+  const selProj=projects.find(p=>p.id===selId);
+  const allTasks=(selProj?.activities||[]).flatMap(a=>a.tasks);
+  const stats=allTasks.reduce((acc,t)=>{acc[t.estado]=(acc[t.estado]||0)+1;return acc;},{});
+
+  const filteredActs=(selProj?.activities||[]).map(a=>{
+    const q=search.toLowerCase();
+    const actMatch=!q||a.name.toLowerCase().includes(q);
+    return {
+      ...a,
+      tasks:a.tasks.filter(t=>{
+        const mS=actMatch||t.tarea.toLowerCase().includes(q)||(t.responsable||"").toLowerCase().includes(q)||(t.log||[]).some(l=>l.text.toLowerCase().includes(q));
+        const mP=filterPrio==="all"||String(t.prioridad)===filterPrio;
+        const mSt=filterStatus==="all"||t.estado===filterStatus;
+        return mS&&mP&&mSt;
+      })
+    };
+  }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all")));
+
+  if(loading)return(
+    <div className="loading-screen">
+      <div className="spinner"/>
+      <span style={{color:"var(--ink3)",fontSize:14}}>Cargando datos...</span>
+    </div>
+  );
+
+  const syncLabel={connected:"Sincronizado ✓",syncing:"Guardando...",error:"Error de conexión"};
+
+  return (
+    <div className="app">
+      <div className="sidebar">
+        <div className="sidebar-brand">
+          <h1>Planificador<br/>de Proyectos</h1>
+          <span>Gestión Inmobiliaria</span>
+        </div>
+        <div className="sidebar-section">Proyectos — por ciudad</div>
+        <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject}/>
+        <div className="sidebar-bottom">
+          <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
+          <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects)}>⬇ Exportar CSV</button>
+        </div>
+        <div className="sync-bar">
+          <span className={`sync-dot ${syncStatus}`}/>
+          <span className="sync-text">{syncLabel[syncStatus]||"—"}</span>
+          {lastSync&&<span className="sync-time">{lastSync}</span>}
+        </div>
+      </div>
+
+      <div className="main">
+        <div className="topbar">
+          <div className="topbar-left" style={{flexWrap:"wrap",rowGap:4}}>
+            {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
+            <h2>{selProj?selProj.name:"Selecciona un proyecto"}</h2>
+            {selProj&&(()=>{
+              const done=allTasks.filter(t=>t.estado==="Completado").length;
+              const pct=allTasks.length>0?Math.round(done/allTasks.length*100):0;
+              const fillColor=pct===100?"var(--green)":pct>=50?"var(--teal)":"var(--amber)";
+              const now=new Date().toISOString().slice(0,10);
+              const overdue=allTasks
+                .filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<now)
+                .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE))[0];
+              return(<>
+                <span className="badge-proj">{allTasks.length} tareas</span>
+                <span className="badge-progress" title={`${done} de ${allTasks.length} tareas completadas`}>
+                  <div className="badge-progress-bar"><div className="badge-progress-fill" style={{width:pct+"%",background:fillColor}}/></div>
+                  {pct}% avance
+                </span>
+                {overdue&&(
+                  <span className="badge-overdue" title={`Tarea más atrasada: ${overdue.tarea} — vencía ${overdue.fechaTerminoE}`}>
+                    ⚠ <span className="badge-overdue-label">Atrasada: {overdue.tarea}</span>
+                  </span>
+                )}
+              </>);
+            })()}
+          </div>
+          <div className="topbar-actions">
+            {selProj&&(
+              <>
+                <div className="stat-pills">
+                  {stats["En Proceso"]>0&&<span style={{color:"var(--teal)",fontWeight:600,fontSize:12}}>{stats["En Proceso"]} en proceso</span>}
+                  {stats["Completado"]>0&&<span style={{color:"var(--green)",fontWeight:600,fontSize:12}}>{stats["Completado"]} ✓</span>}
+                  {stats["Bloqueado"]>0&&<span style={{color:"var(--red)",fontWeight:600,fontSize:12}}>{stats["Bloqueado"]} bloqueadas</span>}
+                  {stats["Pendiente"]>0&&<span style={{color:"var(--ink3)",fontWeight:600,fontSize:12}}>{stats["Pendiente"]} pendientes</span>}
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={()=>setShowNewAct(true)}>+ Nueva Actividad</button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="content">
+          {!selProj?(
+            <div className="empty-state">
+              <div className="empty-icon">🏗️</div>
+              <h3>Sin proyecto seleccionado</h3>
+              <p>Elige un proyecto del menú lateral</p>
+            </div>
+          ):(
+            <>
+              <div className="proj-tabs">
+                <button className={"proj-tab"+(activeTab==="actividades"?" active":"")} onClick={()=>setActiveTab("actividades")}>📋 Actividades</button>
+                <button className={"proj-tab"+(activeTab==="timeline"?" active":"")} onClick={()=>setActiveTab("timeline")}>📅 Línea de Tiempo</button>
+              </div>
+              {activeTab==="actividades"&&(
+                <>
+                  {allTasks.length>0&&(
+                    <div className="filter-bar">
+                      <div className="search-wrap">
+                        <span className="search-icon">🔍</span>
+                        <input className="search-inp" placeholder="Buscar actividad, tarea, responsable o nota..." value={search} onChange={e=>setSearch(e.target.value)}/>
+                      </div>
+                      <select className="filter-select" value={filterPrio} onChange={e=>setFilterPrio(e.target.value)}>
+                        <option value="all">Todas las prioridades</option>
+                        <option value="1">1 — Alta</option><option value="2">2 — Media</option>
+                        <option value="3">3 — Normal</option><option value="4">4 — Baja</option>
+                      </select>
+                      <select className="filter-select" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+                        <option value="all">Todos los estados</option>
+                        {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+                      </select>
+                      {(search||filterPrio!=="all"||filterStatus!=="all")&&(
+                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio("all");setFilterStatus("all");}}>✕ Limpiar</button>
+                      )}
+                    </div>
+                  )}
+                  {filteredActs.map((a,ai)=>(
+                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1}/>
+                  ))}
+                </>
+              )}
+              {activeTab==="timeline"&&(
+                <TimelineView project={selProj}/>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {showNewProj&&(()=>{
+        const existingCities=[...new Set(projects.map(p=>p.name.split(" - ")[0].trim()))].sort();
+        const canCreate=(newProjCity==="otra"?newProjCustomCity.trim():newProjCity.trim())&&newProjName.trim();
+        return(
+        <Modal title="Nuevo Proyecto" onClose={()=>{setShowNewProj(false);setNewProjCity("");setNewProjCustomCity("");setNewProjName("");}} footer={<>
+          <button className="btn btn-outline" onClick={()=>{setShowNewProj(false);setNewProjCity("");setNewProjCustomCity("");setNewProjName("");}}>Cancelar</button>
+          <button className="btn btn-primary" onClick={addProject} disabled={!canCreate}>Crear</button>
+        </>}>
+          <div className="field"><label>Ciudad</label>
+            <select value={newProjCity} onChange={e=>setNewProjCity(e.target.value)} style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:7,padding:"9px 12px",fontSize:13,color:"var(--ink)",outline:"none"}}>
+              <option value="">— Selecciona una ciudad —</option>
+              {existingCities.map(c=><option key={c} value={c}>{c}</option>)}
+              <option value="otra">+ Otra ciudad...</option>
+            </select>
+          </div>
+          {newProjCity==="otra"&&(
+            <div className="field"><label>Nombre de la ciudad</label>
+              <input autoFocus value={newProjCustomCity} onChange={e=>setNewProjCustomCity(e.target.value)} placeholder="Ej: Valparaíso"/>
+            </div>
+          )}
+          <div className="field"><label>Nombre del Proyecto</label>
+            <input autoFocus={newProjCity!=="otra"} value={newProjName} onChange={e=>setNewProjName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&canCreate&&addProject()} placeholder="Ej: Las Lilas, Torre Norte..."/>
+            {(newProjCity&&newProjName)&&<div style={{fontSize:11,color:"var(--ink3)",marginTop:3}}>Se creará como: <strong style={{color:"var(--ink2)"}}>{(newProjCity==="otra"?newProjCustomCity:newProjCity)} - {newProjName}</strong></div>}
+          </div>
+          <div className="field"><label>Color</label>
+            <div className="color-opts">{COLORS.map(c=><button key={c} className={`color-dot-btn${newProjColor===c?" sel":""}`} style={{background:c}} onClick={()=>setNewProjColor(c)}/>)}</div>
+          </div>
+        </Modal>
+        );
+      })()}
+      {showNewAct&&(
+        <Modal title="Nueva Actividad" onClose={()=>setShowNewAct(false)} footer={<>
+          <button className="btn btn-outline" onClick={()=>setShowNewAct(false)}>Cancelar</button>
+          <button className="btn btn-primary" onClick={addActivity} disabled={!newActName.trim()}>Crear</button>
+        </>}>
+          <div className="field"><label>Nombre de la Actividad</label>
+            <input autoFocus value={newActName} onChange={e=>setNewActName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addActivity()} placeholder="Ej: Proyecto Sanitario"/>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function Root() {
+  const [ready,setReady]=useState(false);
+  useEffect(()=>{
+    const u=localStorage.getItem("sb_url");
+    const k=localStorage.getItem("sb_key");
+    if(u&&k){db=new SupabaseClient(u,k);setReady(true);}
+  },[]);
+  const handleSetup=(u,k)=>{db=new SupabaseClient(u,k);setReady(true);};
+  if(!ready)return <SetupScreen onSetup={handleSetup}/>;
+  return <App/>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
+</script>
+</body>
+</html>
