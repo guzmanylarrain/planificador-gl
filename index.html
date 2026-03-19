@@ -1035,7 +1035,7 @@ function App() {
         await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
         lastServerUpdated.current=now;
         setProjects(window.INITIAL_DATA);
-        if(window.INITIAL_DATA.length>0)setSelId(p=>p||window.INITIAL_DATA[0].id);
+        if(window.INITIAL_DATA.length>0&&window.innerWidth>768)setSelId(p=>p||window.INITIAL_DATA[0].id);
       } else {
         const serverTime=rows[0].updated_at;
         const newData=rows[0].data;
@@ -1158,7 +1158,7 @@ function App() {
       <div className="main">
         <div className="topbar">
           <div className="topbar-left" style={{flexWrap:"wrap",rowGap:4}}>
-            {(!isMobile||mobileShowList)&&<button className="mobile-menu-btn" onClick={()=>setSidebarOpen(o=>!o)}>☰</button>}
+
             {mobileShowProject&&<button className="mobile-back-btn" onClick={()=>setSelId(null)}>← Proyectos</button>}
             {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
             <h2>{selProj?selProj.name:isMobile?"Planificador":"Selecciona un proyecto"}</h2>
