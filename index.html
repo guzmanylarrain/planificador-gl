@@ -246,40 +246,83 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 
 
 /* ── MOBILE RESPONSIVE ──────────────────────────────────────────────────── */
-.mobile-menu-btn{display:none;background:none;border:none;color:#d8d4cc;font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+.mobile-menu-btn{display:none;background:none;border:none;color:#d8d4cc;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0}
+.mobile-back-btn{display:none;background:none;border:none;color:var(--ink2);font-size:13px;font-weight:600;cursor:pointer;padding:6px 10px 6px 4px;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99}
+
+/* Mobile project list */
+.mobile-proj-list{display:none}
+.mobile-proj-card{background:var(--white);border-radius:12px;padding:16px;margin-bottom:10px;border-left:5px solid var(--teal);box-shadow:var(--shadow);cursor:pointer;transition:transform 0.12s,box-shadow 0.12s;active:scale(0.98)}
+.mobile-proj-card:active{transform:scale(0.98)}
+.mobile-proj-card-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mobile-proj-card-name{font-weight:700;font-size:14px;color:var(--ink);flex:1;line-height:1.3}
+.mobile-proj-card-city{font-size:11px;color:var(--ink3);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.mobile-proj-card-footer{display:flex;align-items:center;gap:10px;margin-top:8px}
+.mobile-proj-pct{font-size:12px;font-weight:700;color:var(--teal)}
+.mobile-proj-bar{flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.mobile-proj-bar-fill{height:100%;border-radius:3px}
+.mobile-proj-tasks{font-size:11px;color:var(--ink3)}
+.mobile-proj-overdue{font-size:11px;color:var(--red);font-weight:600;margin-top:4px}
+.mobile-header{display:none;background:var(--white);border-bottom:1px solid var(--line);padding:14px 16px 10px;box-shadow:var(--shadow)}
+.mobile-header h1{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:1px}
+.mobile-header p{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:1px}
+.mobile-search{margin:0 0 12px;position:relative}
+.mobile-search input{width:100%;padding:10px 14px 10px 36px;border-radius:10px;border:1px solid var(--line);background:var(--white);font-size:14px;color:var(--ink);outline:none;box-sizing:border-box}
+.mobile-search input:focus{border-color:var(--teal)}
+.mobile-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:14px;pointer-events:none}
 
 @media(max-width:768px){
   .app{flex-direction:column;height:100dvh}
   .sidebar{
     position:fixed;top:0;left:0;height:100%;
-    width:280px;z-index:100;
+    width:82%;max-width:300px;z-index:100;
     transform:translateX(-100%);
     transition:transform 0.25s ease;
   }
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.open{display:block}
   .mobile-menu-btn{display:flex;align-items:center}
+  .mobile-back-btn{display:flex}
   .main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
-  .topbar{padding:0 12px;height:52px;gap:8px}
-  .topbar-left h2{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
-  .topbar-left{gap:7px;flex-wrap:nowrap;overflow:hidden}
-  .badge-overdue{display:none}
-  .badge-progress{display:none}
-  .topbar-actions{gap:5px}
-  .topbar-actions .btn span{display:none}
-  .content{padding:14px 12px 30px;overflow-y:auto;flex:1}
+
+  /* Topbar mobile */
+  .topbar{padding:0 12px;height:50px;gap:6px}
+  .topbar-left{gap:5px;flex-wrap:nowrap;overflow:hidden;flex:1;min-width:0}
+  .topbar-left h2{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge-proj,.badge-overdue,.badge-progress,.stat-pills{display:none!important}
+  .topbar-actions{gap:5px;flex-shrink:0}
+  .topbar-actions .btn{padding:6px 10px;font-size:12px}
+
+  /* Content area */
+  .content{padding:14px 14px 80px;overflow-y:auto;flex:1}
+
+  /* Mobile project list */
+  .mobile-proj-list{display:block}
+  .mobile-header{display:block}
+
+  /* Hide timeline tab on mobile */
+  .proj-tab-timeline{display:none!important}
+
+  /* Filters stack vertically */
   .filter-bar{flex-direction:column;gap:8px}
   .filter-bar .search-wrap{min-width:unset;width:100%}
   .filter-select{width:100%}
-  .task-row{grid-template-columns:28px 1fr auto auto}
-  .td-date{display:none}
-  .th:nth-child(4),.th:nth-child(5),.th:nth-child(7){display:none}
-  .td:nth-child(4),.td:nth-child(5),.td:nth-child(7){display:none}
+
+  /* Task table simplification */
+  .td-date,.th:nth-child(5),.td:nth-child(5){display:none}
+  .th:nth-child(7),.td:nth-child(7){display:none}
+
+  /* Detail grid single column */
   .detail-grid{grid-template-columns:1fr!important}
   .detail-field[style*="gridColumn"]{grid-column:1!important}
-  .proj-tabs{gap:0;overflow-x:auto}
-  .proj-tab{font-size:12px;padding:8px 14px;white-space:nowrap}
+
+  /* Tabs */
+  .proj-tabs{gap:0}
+  .proj-tab{font-size:13px;padding:9px 16px;white-space:nowrap}
+
+  /* Activity rows more compact */
+  .act-header{padding:10px 12px}
+  .task-row-wrap{margin-bottom:4px}
 }
 
 </style>
@@ -898,6 +941,57 @@ function TimelineView({project}){
   );
 }
 
+
+// ── MOBILE PROJECT LIST ──────────────────────────────────────────────────────
+function MobileProjectList({projects, onSelect}) {
+  const [search, setSearch] = React.useState("");
+  const today = new Date().toISOString().slice(0,10);
+  const filtered = projects.filter(p =>
+    !search || p.name.toLowerCase().includes(search.toLowerCase())
+  );
+  return (
+    <div>
+      <div className="mobile-search">
+        <span className="mobile-search-icon">🔍</span>
+        <input
+          placeholder="Buscar proyecto..."
+          value={search}
+          onChange={e=>setSearch(e.target.value)}
+        />
+      </div>
+      {filtered.map(p => {
+        const tasks = (p.activities||[]).flatMap(a=>a.tasks);
+        const done = tasks.filter(t=>t.estado==="Completado").length;
+        const pct = tasks.length>0 ? Math.round(done/tasks.length*100) : 0;
+        const color = pct===100?"#1a7a4a":pct>=50?"#1a5f6e":"#b7620a";
+        const overdue = tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
+          .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE))[0];
+        const city = p.name.split(" - ")[0].trim();
+        const shortName = p.name.includes(" - ") ? p.name.split(" - ").slice(1).join(" - ") : p.name;
+        return (
+          <div key={p.id} className="mobile-proj-card" style={{borderLeftColor:p.color}} onClick={()=>onSelect(p.id)}>
+            <div className="mobile-proj-card-city">{city}</div>
+            <div className="mobile-proj-card-header">
+              <span style={{width:10,height:10,borderRadius:"50%",background:p.color,display:"inline-block",flexShrink:0}}/>
+              <div className="mobile-proj-card-name">{shortName}</div>
+              <span style={{fontSize:11,color:"var(--ink3)",flexShrink:0}}>{tasks.length} tareas</span>
+            </div>
+            <div className="mobile-proj-card-footer">
+              <span className="mobile-proj-pct">{pct}%</span>
+              <div className="mobile-proj-bar">
+                <div className="mobile-proj-bar-fill" style={{width:pct+"%",background:color}}/>
+              </div>
+              <span className="mobile-proj-tasks">{done}/{tasks.length} completadas</span>
+            </div>
+            {overdue&&<div className="mobile-proj-overdue">⚠ Atrasada: {overdue.tarea}</div>}
+          </div>
+        );
+      })}
+      {filtered.length===0&&<p style={{textAlign:"center",color:"var(--ink3)",marginTop:40}}>Sin resultados</p>}
+    </div>
+  );
+}
+
 // ── MAIN APP ────────────────────────────────────────────────────────────────
 function App() {
   const [projects,setProjects]=useState([]);
@@ -914,6 +1008,15 @@ function App() {
   const [newActName,setNewActName]=useState("");
   const [activeTab,setActiveTab]=useState("actividades");
   const [sidebarOpen,setSidebarOpen]=useState(false);
+  const [isMobile,setIsMobile]=useState(()=>window.innerWidth<=768);
+  useEffect(()=>{
+    const fn=()=>setIsMobile(window.innerWidth<=768);
+    window.addEventListener("resize",fn);
+    return()=>window.removeEventListener("resize",fn);
+  },[]);
+  // On mobile, null selId means "show project list"
+  const mobileShowList = isMobile && !selId;
+  const mobileShowProject = isMobile && !!selId;
   const [search,setSearch]=useState("");
   const [filterPrio,setFilterPrio]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
@@ -1055,9 +1158,10 @@ function App() {
       <div className="main">
         <div className="topbar">
           <div className="topbar-left" style={{flexWrap:"wrap",rowGap:4}}>
-            <button className="mobile-menu-btn" onClick={()=>setSidebarOpen(o=>!o)}>☰</button>
+            {(!isMobile||mobileShowList)&&<button className="mobile-menu-btn" onClick={()=>setSidebarOpen(o=>!o)}>☰</button>}
+            {mobileShowProject&&<button className="mobile-back-btn" onClick={()=>setSelId(null)}>← Proyectos</button>}
             {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
-            <h2>{selProj?selProj.name:"Selecciona un proyecto"}</h2>
+            <h2>{selProj?selProj.name:isMobile?"Planificador":"Selecciona un proyecto"}</h2>
             {selProj&&(()=>{
               const done=allTasks.filter(t=>t.estado==="Completado").length;
               const pct=allTasks.length>0?Math.round(done/allTasks.length*100):0;
@@ -1095,7 +1199,13 @@ function App() {
           </div>
         </div>
         <div className="content">
-          {!selProj?(
+          {isMobile&&mobileShowList?(
+            <>
+              <div className="mobile-proj-list">
+                <MobileProjectList projects={projects} onSelect={id=>{setSelId(id);setActiveTab("actividades");}}/>
+              </div>
+            </>
+          ):!selProj?(
             <div className="empty-state">
               <div className="empty-icon">🏗️</div>
               <h3>Sin proyecto seleccionado</h3>
@@ -1105,7 +1215,7 @@ function App() {
             <>
               <div className="proj-tabs">
                 <button className={"proj-tab"+(activeTab==="actividades"?" active":"")} onClick={()=>setActiveTab("actividades")}>📋 Actividades</button>
-                <button className={"proj-tab"+(activeTab==="timeline"?" active":"")} onClick={()=>setActiveTab("timeline")}>📅 Línea de Tiempo</button>
+                <button className={"proj-tab proj-tab-timeline"+(activeTab==="timeline"?" active":"")} onClick={()=>setActiveTab("timeline")}>📅 Línea de Tiempo</button>
               </div>
               {activeTab==="actividades"&&(
                 <>
