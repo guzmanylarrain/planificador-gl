@@ -244,6 +244,44 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .tl-tooltip-title{font-weight:700;margin-bottom:5px;color:var(--teal)}
 .tl-no-dates{display:flex;align-items:center;justify-content:center;height:200px;color:var(--ink3);font-size:13px;font-style:italic}
 
+
+/* ── MOBILE RESPONSIVE ──────────────────────────────────────────────────── */
+.mobile-menu-btn{display:none;background:none;border:none;color:#d8d4cc;font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+
+@media(max-width:768px){
+  .app{flex-direction:column;height:100dvh}
+  .sidebar{
+    position:fixed;top:0;left:0;height:100%;
+    width:280px;z-index:100;
+    transform:translateX(-100%);
+    transition:transform 0.25s ease;
+  }
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.open{display:block}
+  .mobile-menu-btn{display:flex;align-items:center}
+  .main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  .topbar{padding:0 12px;height:52px;gap:8px}
+  .topbar-left h2{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+  .topbar-left{gap:7px;flex-wrap:nowrap;overflow:hidden}
+  .badge-overdue{display:none}
+  .badge-progress{display:none}
+  .topbar-actions{gap:5px}
+  .topbar-actions .btn span{display:none}
+  .content{padding:14px 12px 30px;overflow-y:auto;flex:1}
+  .filter-bar{flex-direction:column;gap:8px}
+  .filter-bar .search-wrap{min-width:unset;width:100%}
+  .filter-select{width:100%}
+  .task-row{grid-template-columns:28px 1fr auto auto}
+  .td-date{display:none}
+  .th:nth-child(4),.th:nth-child(5),.th:nth-child(7){display:none}
+  .td:nth-child(4),.td:nth-child(5),.td:nth-child(7){display:none}
+  .detail-grid{grid-template-columns:1fr!important}
+  .detail-field[style*="gridColumn"]{grid-column:1!important}
+  .proj-tabs{gap:0;overflow-x:auto}
+  .proj-tab{font-size:12px;padding:8px 14px;white-space:nowrap}
+}
+
 </style>
 </head>
 <body>
@@ -875,6 +913,7 @@ function App() {
   const [newProjCustomCity,setNewProjCustomCity]=useState("");
   const [newActName,setNewActName]=useState("");
   const [activeTab,setActiveTab]=useState("actividades");
+  const [sidebarOpen,setSidebarOpen]=useState(false);
   const [search,setSearch]=useState("");
   const [filterPrio,setFilterPrio]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
@@ -1016,6 +1055,7 @@ function App() {
       <div className="main">
         <div className="topbar">
           <div className="topbar-left" style={{flexWrap:"wrap",rowGap:4}}>
+            <button className="mobile-menu-btn" onClick={()=>setSidebarOpen(o=>!o)}>☰</button>
             {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
             <h2>{selProj?selProj.name:"Selecciona un proyecto"}</h2>
             {selProj&&(()=>{
