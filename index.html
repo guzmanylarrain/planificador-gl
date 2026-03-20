@@ -1267,8 +1267,8 @@ function DashboardView({projects, onSelectProject}) {
 const KANBAN_COLS = [
   {id:"Pendiente",label:"Pendiente",color:"#8a8780"},
   {id:"En Proceso",label:"En Proceso",color:"#1a5f6e"},
-  {id:"Bloqueado",label:"Bloqueado",color:"#c0392b"},
   {id:"Completado",label:"Completado",color:"#1a7a4a"},
+  {id:"Bloqueado",label:"Bloqueado",color:"#c0392b"},
 ];
 const PRIO_COLORS={1:"#c0392b",2:"#b7620a",3:"#1a5f6e",4:"#8a8780"};
 const PRIO_LABELS={1:"Alta",2:"Media",3:"Normal",4:"Baja"};
@@ -1536,9 +1536,19 @@ function App() {
   return (
     <div className="app">
       <div className="sidebar">
-        <div className="sidebar-brand">
-          <h1>Planificador<br/>de Proyectos</h1>
-          <span>Gestión Inmobiliaria</span>
+        <div className="sidebar-brand" style={{padding:"14px 16px 12px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="36" height="36" rx="6" fill="#C0391B"/>
+              <path d="M7 28V10l7-3v21M14 28V14l7-3v17M21 28V18l7-3v13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 28h22" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:"#f0eeea",letterSpacing:0.3,lineHeight:1.2}}>Guzmán &amp; Larraín</div>
+              <div style={{fontSize:9,color:"#7a7770",textTransform:"uppercase",letterSpacing:1.5}}>Inmobiliaria</div>
+            </div>
+          </div>
+          <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
         <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject}/>
