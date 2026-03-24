@@ -747,7 +747,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
             </div>
             <div className="detail-field">
               <div className="detail-label">Fecha Término Real</div>
-              <input className="detail-input" type="date" value={form.fechaTerminoR||""} onChange={e=>set("fechaTerminoR",e.target.value)}/>
+              <input className="detail-input" type="date" value={form.fechaTerminoR||""} onChange={e=>{const v=e.target.value;setForm(f=>({...f,fechaTerminoR:v,...(v&&f.estado!=="Completado"?{estado:"Completado"}:{})}));}}/>
             </div>
             <div className="detail-field" style={{gridColumn:"1/-1"}}>
               <label style={{display:"flex",alignItems:"center",gap:9,cursor:"pointer",userSelect:"none"}}>
@@ -1267,6 +1267,7 @@ function DashboardView({projects, onSelectProject}) {
   const inProgress = allTasks.filter(t=>t.estado==="En Proceso").length;
   const blocked = allTasks.filter(t=>t.estado==="Bloqueado").length;
   const pending = allTasks.filter(t=>t.estado==="Pendiente").length;
+  const overdueAll = allTasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length;
   const overdueTasks = allTasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
     .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE)).slice(0,12);
   const globalPct = allTasks.length>0?Math.round(done/allTasks.length*100):0;
@@ -1342,6 +1343,7 @@ function DashboardView({projects, onSelectProject}) {
             {label:"En Proceso",val:inProgress,color:"#1a5f6e"},
             {label:"Pendiente",val:pending,color:"#8a8780"},
             {label:"Bloqueado",val:blocked,color:"#c0392b"},
+            {label:"Atrasado",val:overdueAll,color:"#e67e22"},
           ]}/>
           {respList.length>0&&(<>
             <div style={{marginTop:18,paddingTop:14,borderTop:"1px solid var(--line)"}}>
@@ -1395,15 +1397,18 @@ function DashboardView({projects, onSelectProject}) {
           {(()=>{
             const isTasks=allTasks.filter(t=>t.informeSocio&&t.estado!=="Completado").sort((a,b)=>a.fechaTerminoE?.localeCompare(b.fechaTerminoE||"")||0).slice(0,10);
             return isTasks.length===0?<p style={{color:"var(--ink3)",fontSize:12,textAlign:"center",padding:20}}>✅ Sin tareas IS pendientes</p>:
-            isTasks.map((t,i)=>(
+            isTasks.map((t,i)=>{
+              const isOverdueIS=t.fechaTerminoE&&t.fechaTerminoE<today;
+              const badge=isOverdueIS?{bg:"var(--red-lt)",col:"var(--red)",label:"⚠ Atrasado"}:{bg:"rgba(20,160,180,0.12)",col:"var(--teal)",label:t.estado};
+              return(
               <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
-                <span className="dash-upcoming-badge" style={{background:"rgba(20,160,180,0.12)",color:"var(--teal)"}}>{t.estado}</span>
+                <span className="dash-upcoming-badge" style={{background:badge.bg,color:badge.col}}>{badge.label}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
                   <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}</div>
                 </div>
               </div>
-            ));
+            );});
           })()}
         </div>
       </div>
@@ -1460,7 +1465,10 @@ function KanbanView({project, onUpdateTask}) {
   const handleDrop=(e,newStatus)=>{
     e.preventDefault();
     if(!dragging)return;
-    onUpdateTask(dragging.actId, {...allTasks.find(t=>t.id===dragging.taskId), estado:newStatus});
+    const task=allTasks.find(t=>t.id===dragging.taskId);
+    const updates={estado:newStatus};
+    if(newStatus==="Completado"&&!task.fechaTerminoR) updates.fechaTerminoR=today;
+    onUpdateTask(dragging.actId, {...task,...updates});
     setDragging(null);setDragOver(null);
   };
 
