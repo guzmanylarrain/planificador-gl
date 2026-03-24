@@ -294,7 +294,7 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .topbar-actions .btn{padding:6px 10px;font-size:12px}
 
   /* Content area */
-  .content{padding:14px 14px 80px;overflow-y:auto;flex:1}
+  .content{padding:16px 12px 100px;overflow-y:auto;flex:1}
 
   /* Mobile project list */
   .mobile-proj-list{display:block}
@@ -308,9 +308,24 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .filter-bar .search-wrap{min-width:unset;width:100%}
   .filter-select{width:100%}
 
-  /* Task table simplification */
-  .td-date,.th:nth-child(5),.td:nth-child(5){display:none}
-  .th:nth-child(7),.td:nth-child(7){display:none}
+  /* Task table simplification - hide dates (5,6), responsable (7), IS (8) */
+  .td-date,.th:nth-child(5),.td:nth-child(5){display:none!important}
+  .th:nth-child(6),.td:nth-child(6){display:none!important}
+  .th:nth-child(7),.td:nth-child(7){display:none!important}
+  .th:nth-child(8),.td:nth-child(8){display:none!important}
+
+  /* CRITICAL: Override grid for mobile - only num, task name, priority, status */
+  .tasks-table-head{grid-template-columns:36px 1fr 60px 90px!important}
+  .task-row{grid-template-columns:36px 1fr 60px 90px!important}
+
+  /* Task name must wrap and be readable */
+  .task-name{white-space:normal!important;word-break:break-word;font-size:13px;line-height:1.4}
+  .task-desc-preview{white-space:normal!important;word-break:break-word;font-size:11px;line-height:1.3;margin-top:4px;max-width:100%!important}
+  .td{padding:10px 8px!important;overflow:visible!important}
+  .task-row{min-height:52px;align-items:flex-start!important;padding-top:2px}
+
+  /* Status chip smaller on mobile */
+  .status-chip{font-size:10px!important;padding:3px 6px!important;white-space:nowrap}
 
   /* Detail grid single column */
   .detail-grid{grid-template-columns:1fr!important}
@@ -321,8 +336,16 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .proj-tab{font-size:13px;padding:9px 16px;white-space:nowrap}
 
   /* Activity rows more compact */
-  .act-header{padding:10px 12px}
-  .task-row-wrap{margin-bottom:4px}
+  .act-header{padding:12px 14px;gap:8px}
+  .act-name{font-size:14px!important;line-height:1.3}
+  .task-row-wrap{margin-bottom:0}
+  .activity-group{margin-bottom:14px;border-radius:10px}
+  
+  /* Add task button */
+  .add-task-row{padding:10px 14px;font-size:13px}
+  
+  /* Table header labels smaller */
+  .th{font-size:10px!important;padding:7px 8px!important}
 }
 
 
@@ -1504,11 +1527,11 @@ function App({onSignOut, userEmail}) {
         const newData=rows[0].data;
         if(!silent){
           setProjects(newData);
-          setSelId(p=>p||(newData.length>0?newData[0].id:null));
+          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         } else if(!pendingSave.current&&serverTime!==lastServerUpdated.current){
           setProjects(newData);
-          setSelId(p=>p||(newData.length>0?newData[0].id:null));
+          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         }
       }
