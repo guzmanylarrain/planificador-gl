@@ -412,6 +412,50 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .dash-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .dash-legend-val{font-weight:700;color:var(--ink)}
 
+/* ── MULTI-SELECT DROPDOWN ── */
+.multiselect-wrap{position:relative;display:inline-block}
+.multiselect-btn{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--ink);outline:none;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:160px;font-family:inherit}
+.multiselect-btn.open,.multiselect-btn:focus{border-color:var(--teal)}
+.multiselect-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--white);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow-lg);z-index:300;min-width:260px;max-height:320px;overflow-y:auto}
+.multiselect-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;transition:background 0.1s;font-size:12px;color:var(--ink2);user-select:none}
+.multiselect-item:hover{background:var(--bg)}
+.multiselect-item.checked{color:var(--ink);font-weight:600}
+.multiselect-item input[type=checkbox]{accent-color:var(--teal);cursor:pointer;width:14px;height:14px;flex-shrink:0;pointer-events:none}
+.multiselect-sep{height:1px;background:var(--line);margin:4px 0}
+
+/* ── INFORME VIEW ── */
+.inf-wrap{padding:28px 32px 48px;overflow-y:auto;height:100%}
+.inf-header{margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid var(--teal)}
+.inf-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+.inf-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.inf-title{font-size:24px;font-weight:700;color:var(--ink);line-height:1.2;font-family:'Libre Baskerville',serif}
+.inf-subtitle{font-size:13px;color:var(--ink3);margin-top:5px}
+.inf-controls{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.inf-toggle{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:2px solid var(--line);cursor:pointer;font-size:12px;font-weight:600;color:var(--ink3);background:var(--white);transition:all 0.15s;user-select:none;font-family:inherit}
+.inf-toggle.on{border-color:var(--teal);color:var(--teal);background:var(--teal-lt)}
+.inf-kpis{display:flex;gap:12px;flex-wrap:wrap}
+.inf-kpi{display:flex;flex-direction:column;align-items:center;background:var(--bg);border-radius:10px;padding:12px 18px;min-width:72px}
+.inf-kpi-val{font-size:24px;font-weight:700;line-height:1}
+.inf-kpi-label{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;margin-top:4px;text-align:center}
+.inf-progress-bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:14px}
+.inf-progress-fill{height:100%;border-radius:4px;transition:width 0.4s}
+.inf-section{margin-bottom:28px}
+.inf-section-header{display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+.inf-section-icon{font-size:15px;flex-shrink:0}
+.inf-section-title{font-size:14px;font-weight:700;color:var(--ink)}
+.inf-section-count{background:var(--bg2);color:var(--ink3);font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;margin-left:auto}
+.inf-task-card{background:var(--white);border-radius:8px;border:1px solid var(--line);border-left:4px solid var(--line);padding:13px 16px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.inf-task-act{font-size:10px;color:var(--teal);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.inf-task-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:7px;line-height:1.4}
+.inf-task-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.inf-task-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px}
+.inf-task-date{font-size:11px;color:var(--ink3)}
+.inf-task-resp{font-size:11px;color:var(--ink2);font-weight:600}
+.inf-task-note{margin-top:9px;background:var(--bg);border-radius:5px;padding:8px 11px;font-size:12px;color:var(--ink2);line-height:1.45;border-left:3px solid var(--line)}
+.inf-task-note-date{font-size:10px;color:var(--ink3);font-weight:600;margin-bottom:2px}
+.inf-overdue-tag{font-size:10px;color:var(--red);font-weight:700;padding-left:20px;margin-top:-2px;margin-bottom:8px}
+.inf-empty{text-align:center;color:var(--ink3);font-size:13px;padding:40px 20px;font-style:italic}
+
 /* ── KANBAN ──────────────────────────────────────────────────────────────── */
 .kanban-wrap{display:flex;gap:14px;padding:4px 2px 20px;overflow-x:auto;height:100%;align-items:flex-start}
 .kanban-col{flex:0 0 230px;background:var(--bg2);border-radius:10px;padding:12px 10px;display:flex;flex-direction:column;gap:8px;min-height:200px;transition:background 0.15s}
@@ -1218,6 +1262,42 @@ function exportPDF(projects) {
 }
 
 // ── DASHBOARD VIEW ──────────────────────────────────────────────────────────
+function MultiSelect({options, selected, onChange, placeholder}) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(()=>{
+    const fn=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
+    document.addEventListener("mousedown",fn);
+    return()=>document.removeEventListener("mousedown",fn);
+  },[]);
+  const allSelected=selected.length===0;
+  const label=allSelected?placeholder:`${selected.length} seleccionado${selected.length>1?"s":""}`;
+  const toggle=val=>onChange(selected.includes(val)?selected.filter(v=>v!==val):[...selected,val]);
+  return(
+    <div className="multiselect-wrap" ref={ref}>
+      <button className={"multiselect-btn"+(open?" open":"")} onClick={()=>setOpen(o=>!o)}>
+        <span style={{flex:1,textAlign:"left"}}>{label}</span>
+        <span style={{fontSize:9,opacity:0.5}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&(
+        <div className="multiselect-dropdown">
+          <div className="multiselect-item" onClick={()=>onChange([])}>
+            <input type="checkbox" readOnly checked={allSelected}/> Todos los proyectos
+          </div>
+          <div className="multiselect-sep"/>
+          {options.map(o=>(
+            <div key={o.id} className={"multiselect-item"+(selected.includes(o.id)?" checked":"")} onClick={()=>toggle(o.id)}>
+              <input type="checkbox" readOnly checked={selected.includes(o.id)}/>
+              <span style={{width:8,height:8,borderRadius:"50%",background:o.color,display:"inline-block",flexShrink:0}}/>
+              <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DonutChart({data}) {
   const total=data.reduce((s,d)=>s+d.val,0);
   if(total===0)return<div style={{textAlign:"center",color:"var(--ink3)",padding:20}}>Sin datos</div>;
@@ -1255,14 +1335,144 @@ function DonutChart({data}) {
   );
 }
 
+function InformeView({project}) {
+  const [soloIS, setSoloIS] = useState(false);
+  const today=new Date().toISOString().slice(0,10);
+  const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
+  const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
+
+  const allTasks=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
+  const filt=t=>!soloIS||t.informeSocio;
+
+  const atrasadas=allTasks.filter(t=>filt(t)&&t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
+    .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE));
+  const enCurso=allTasks.filter(t=>filt(t)&&t.estado==="En Proceso")
+    .sort((a,b)=>(a.fechaTerminoE||"").localeCompare(b.fechaTerminoE||""));
+  const pendientes=allTasks.filter(t=>filt(t)&&t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
+    .sort((a,b)=>(a.fechaTerminoE||"zzz").localeCompare(b.fechaTerminoE||"zzz"));
+  const recientes=allTasks.filter(t=>filt(t)&&t.estado==="Completado"&&t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)
+    .sort((a,b)=>b.fechaTerminoR.localeCompare(a.fechaTerminoR));
+
+  const done=allTasks.filter(t=>t.estado==="Completado").length;
+  const total=allTasks.length;
+  const pct=total>0?Math.round(done/total*100):0;
+  const pctColor=pct===100?"var(--green)":pct>=50?project.color:"var(--amber)";
+
+  const fmtDate=d=>{if(!d||d.length<8)return"—";const[y,m,day]=d.split("-");return`${day}/${m}/${y.slice(2)}`;};
+  const lastLog=t=>t.log&&t.log.length>0?t.log[t.log.length-1]:null;
+  const daysDiff=d=>{const diff=Math.floor((new Date(today)-new Date(d))/864e5);return diff===0?"hoy":diff===1?"1 día":diff+" días";};
+  const dateStr=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  function TaskCard({t,accentColor}) {
+    const log=lastLog(t);
+    return(
+      <div className="inf-task-card" style={{borderLeftColor:accentColor}}>
+        <div className="inf-task-act">{t.actName}</div>
+        <div className="inf-task-name">{t.tarea}</div>
+        <div className="inf-task-meta">
+          {t.responsable&&<span className="inf-task-resp">👤 {t.responsable}</span>}
+          {t.fechaTerminoE&&<span className="inf-task-date">📅 Término E: {fmtDate(t.fechaTerminoE)}</span>}
+          {t.fechaTerminoR&&<span className="inf-task-date">✅ Completado: {fmtDate(t.fechaTerminoR)}</span>}
+          {t.informeSocio&&<span className="inf-task-badge" style={{background:"rgba(26,95,110,0.12)",color:"var(--teal)"}}>📋 IS</span>}
+        </div>
+        {log&&(
+          <div className="inf-task-note">
+            {log.date&&<div className="inf-task-note-date">{fmtDate(log.date)}</div>}
+            <div>{log.text}</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function Section({icon,title,tasks,accentColor,headerStyle}) {
+    if(tasks.length===0)return null;
+    return(
+      <div className="inf-section">
+        <div className="inf-section-header" style={headerStyle||{}}>
+          <span className="inf-section-icon">{icon}</span>
+          <span className="inf-section-title" style={headerStyle?{color:headerStyle.borderBottomColor}:{}}>{title}</span>
+          <span className="inf-section-count" style={headerStyle?{background:"rgba(192,57,43,0.1)",color:"var(--red)"}:{}}>{tasks.length}</span>
+        </div>
+        {tasks.map((t,i)=><TaskCard key={i} t={t} accentColor={accentColor}/>)}
+      </div>
+    );
+  }
+
+  const projShortName=project.name.split(" - ").slice(1).join(" - ")||project.name;
+
+  return(
+    <div className="inf-wrap">
+      <div className="inf-header" style={{borderBottomColor:project.color}}>
+        <div className="inf-header-top">
+          <div>
+            <div className="inf-eyebrow" style={{color:project.color}}>Informe de Estado</div>
+            <div className="inf-title">{projShortName}</div>
+            <div className="inf-subtitle">{dateStr} · {project.name.split(" - ")[0]}</div>
+          </div>
+          <div className="inf-controls">
+            <button className={"inf-toggle"+(soloIS?" on":"")} onClick={()=>setSoloIS(s=>!s)}>
+              📋 {soloIS?"Solo Informe Socios":"Todo el equipo"}
+            </button>
+          </div>
+        </div>
+        <div className="inf-kpis">
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{total}</div><div className="inf-kpi-label">Total tareas</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:pctColor}}>{pct}%</div><div className="inf-kpi-label">Avance</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--green)"}}>{done}</div><div className="inf-kpi-label">Completadas</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{enCurso.length}</div><div className="inf-kpi-label">En curso</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--red)"}}>{atrasadas.length}</div><div className="inf-kpi-label">Atrasadas</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--ink3)"}}>{pendientes.length}</div><div className="inf-kpi-label">Pendientes</div></div>
+        </div>
+        <div className="inf-progress-bar"><div className="inf-progress-fill" style={{width:pct+"%",background:pctColor}}/></div>
+      </div>
+
+      {atrasadas.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header" style={{borderBottomColor:"var(--red)"}}>
+            <span className="inf-section-icon">⚠️</span>
+            <span className="inf-section-title" style={{color:"var(--red)"}}>Tareas Atrasadas</span>
+            <span className="inf-section-count" style={{background:"var(--red-lt)",color:"var(--red)"}}>{atrasadas.length}</span>
+          </div>
+          {atrasadas.map((t,i)=>(
+            <div key={i}>
+              <TaskCard t={t} accentColor="var(--red)"/>
+              <div className="inf-overdue-tag">⏱ Vencida hace {daysDiff(t.fechaTerminoE)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Section icon="🔄" title="En Curso" tasks={enCurso} accentColor="var(--teal)"/>
+      <Section icon="📋" title="Próximas / Pendientes" tasks={pendientes} accentColor="var(--amber)"/>
+      <Section icon="✅" title="Completadas — últimas 3 semanas" tasks={recientes} accentColor="var(--green)"/>
+
+      {[atrasadas,enCurso,pendientes,recientes].every(s=>s.length===0)&&(
+        <div className="inf-empty">
+          {soloIS?"No hay tareas marcadas como Informe Socios en este proyecto.":"No hay tareas para mostrar en este período."}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DashboardView({projects, onSelectProject}) {
   const [filterCity, setFilterCity] = useState("all");
+  const [selectedProjs, setSelectedProjs] = useState([]);
+  const [filterResp, setFilterResp] = useState("all");
   const today = new Date().toISOString().slice(0,10);
   const cities = [...new Set(projects.map(p=>p.name.split(" - ")[0].trim()))].sort();
-  
-  const filtered = filterCity==="all" ? projects : projects.filter(p=>p.name.startsWith(filterCity));
-  
-  const allTasks = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
+
+  const cityFiltered = filterCity==="all" ? projects : projects.filter(p=>p.name.startsWith(filterCity));
+  const projOptions = cityFiltered.map(p=>({id:p.id,label:p.name.split(" - ").slice(1).join(" - ")||p.name,color:p.color}));
+  const filtered = selectedProjs.length===0 ? cityFiltered : cityFiltered.filter(p=>selectedProjs.includes(p.id));
+
+  // When city changes, reset project selection
+  React.useEffect(()=>setSelectedProjs([]),[filterCity]);
+
+  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
+  const allResponsables = [...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
+  const allTasks = filterResp==="all" ? allTasksRaw : allTasksRaw.filter(t=>t.responsable===filterResp);
   const done = allTasks.filter(t=>t.estado==="Completado").length;
   const inProgress = allTasks.filter(t=>t.estado==="En Proceso").length;
   const blocked = allTasks.filter(t=>t.estado==="Bloqueado").length;
@@ -1313,6 +1523,14 @@ function DashboardView({projects, onSelectProject}) {
           <option value="all">Todas las ciudades</option>
           {cities.map(c=><option key={c} value={c}>{c}</option>)}
         </select>
+        <MultiSelect options={projOptions} selected={selectedProjs} onChange={setSelectedProjs} placeholder="Todos los proyectos"/>
+        <select value={filterResp} onChange={e=>setFilterResp(e.target.value)}>
+          <option value="all">Todos los responsables</option>
+          {allResponsables.map(r=><option key={r} value={r}>{r}</option>)}
+        </select>
+        {(filterCity!=="all"||selectedProjs.length>0||filterResp!=="all")&&(
+          <button className="btn btn-ghost btn-sm" onClick={()=>{setFilterCity("all");setSelectedProjs([]);setFilterResp("all");}}>✕ Limpiar</button>
+        )}
         <span style={{fontSize:11,color:"var(--ink3)",marginLeft:"auto"}}>{filtered.length} proyectos · {allTasks.length} tareas</span>
       </div>
 
@@ -1830,6 +2048,7 @@ function App({onSignOut, userEmail}) {
                 <button className={"proj-tab"+(activeTab==="actividades"?" active":"")} onClick={()=>setActiveTab("actividades")}>📋 Actividades</button>
                 <button className={"proj-tab proj-tab-kanban"+(activeTab==="kanban"?" active":"")} onClick={()=>setActiveTab("kanban")}>🗂 Kanban</button>
                 <button className={"proj-tab proj-tab-timeline"+(activeTab==="timeline"?" active":"")} onClick={()=>setActiveTab("timeline")}>📅 Línea de Tiempo</button>
+                <button className={"proj-tab"+(activeTab==="informe"?" active":"")} onClick={()=>setActiveTab("informe")}>📄 Informe</button>
               </div>
               {activeTab==="actividades"&&(
                 <>
@@ -1863,6 +2082,9 @@ function App({onSignOut, userEmail}) {
               )}
               {activeTab==="timeline"&&(
                 <TimelineView project={selProj}/>
+              )}
+              {activeTab==="informe"&&(
+                <InformeView project={selProj}/>
               )}
             </>
           )}
