@@ -617,8 +617,8 @@ function SetupScreen({onSetup}) {
     try {
       const client=new SupabaseClient(u,k);
       await client.test();
-      localStorage.setItem("sb_url",u);
-      localStorage.setItem("sb_key",k);
+      localStorage.setItem("pl_url",u);
+      localStorage.setItem("pl_key",k);
       onSetup(u,k);
     } catch(e){setError("⚠️ "+e.message);}
     setTesting(false);
@@ -2148,8 +2148,8 @@ function LoginScreen({onLogin}) {
   useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
 
   const handleLogin = async () => {
-    const u = localStorage.getItem("sb_url");
-    const k = localStorage.getItem("sb_key");
+    const u = localStorage.getItem("pl_url");
+    const k = localStorage.getItem("pl_key");
     if(!u||!k) { setError("Primero configura las credenciales de Supabase."); return; }
     if(!email.trim()||!password) { setError("Ingresa tu email y contraseña."); return; }
     setLoading(true); setError("");
@@ -2208,8 +2208,8 @@ function Root() {
   const [ready, setReady] = useState(false);
 
   useEffect(()=>{
-    const u=localStorage.getItem("sb_url");
-    const k=localStorage.getItem("sb_key");
+    const u=localStorage.getItem("pl_url");
+    const k=localStorage.getItem("pl_key");
     if(u&&k){
       db=new SupabaseClient(u,k);
       // If we have a session token, use it for authenticated requests
@@ -2232,7 +2232,7 @@ function Root() {
   };
 
   // Not yet configured with Supabase credentials
-  if(!ready && !localStorage.getItem("sb_url")) return <SetupScreen onSetup={handleSetup}/>;
+  if(!ready && !localStorage.getItem("pl_url")) return <SetupScreen onSetup={handleSetup}/>;
   // Credentials exist but not logged in
   if(!session) return <LoginScreen onLogin={handleLogin}/>;
   // Need to setup db first
