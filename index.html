@@ -1427,9 +1427,167 @@ function DonutChart({data}) {
 
 function InformeView({project}) {
   const [filterIS, setFilterIS] = useState("all");
-  const [filterPrios, setFilterPrios] = useState([]); // multi
-  const [filterEstados, setFilterEstados] = useState([]); // multi
+  const [filterPrios, setFilterPrios] = useState([]);
+  const [filterEstados, setFilterEstados] = useState([]);
   const today=new Date().toISOString().slice(0,10);
+
+  const allTasks=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
+
+  const applyFilters=t=>{
+    if(filterIS==="si"&&!t.informeSocio) return false;
+    if(filterIS==="no"&&t.informeSocio) return false;
+    if(filterPrios.length>0&&!filterPrios.includes(String(t.prioridad))) return false;
+    if(filterEstados.length>0&&!filterEstados.includes(t.estado)) return false;
+    return true;
+  };
+
+  const filtered=allTasks.filter(applyFilters);
+  const hasFilters=filterIS!=="all"||filterPrios.length>0||filterEstados.length>0;
+
+  const atrasadas=filtered.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
+    .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE));
+  const enCurso=filtered.filter(t=>t.estado==="En Proceso")
+    .sort((a,b)=>(a.fechaTerminoE||"").localeCompare(b.fechaTerminoE||""));
+  const pendientes=filtered.filter(t=>t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
+    .sort((a,b)=>(a.fechaTerminoE||"zzz").localeCompare(b.fechaTerminoE||"zzz"));
+  const completadas=filtered.filter(t=>t.estado==="Completado")
+    .sort((a,b)=>(b.fechaTerminoR||"").localeCompare(a.fechaTerminoR||""));
+
+  const done=completadas.length;
+  const total=filtered.length;
+  const pct=total>0?Math.round(done/total*100):0;
+  const pctColor=pct===100?"var(--green)":pct>=50?project.color:"var(--amber)";
+
+  const togglePrio=v=>setFilterPrios(p=>p.includes(v)?p.filter(x=>x!==v):[...p,v]);
+  const toggleEstado=v=>setFilterEstados(p=>p.includes(v)?p.filter(x=>x!==v):[...p,v]);
+
+  const fmtDate=d=>{if(!d||d.length<8)return"—";const[y,m,day]=d.split("-");return`${day}/${m}/${y.slice(2)}`;};
+  const daysDiff=d=>{const diff=Math.floor((new Date(today)-new Date(d))/864e5);return diff===0?"hoy":diff===1?"1 día":diff+" días";};
+  const dateStr=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  function TaskCard({t,accentColor,showOverdue}) {
+    const [logOpen,setLogOpen]=useState(false);
+    const logs=t.log||[];
+    const lastLog=logs.length>0?logs[logs.length-1]:null;
+    return(
+      <div className="inf-task-card" style={{borderLeftColor:accentColor}}>
+        <div className="inf-task-act">{t.actName}</div>
+        <div className="inf-task-name">{t.tarea}</div>
+        <div className="inf-task-meta">
+          {t.responsable&&<span className="inf-task-resp">👤 {t.responsable}</span>}
+          {t.fechaTerminoE&&<span className="inf-task-date">📅 Término E: {fmtDate(t.fechaTerminoE)}</span>}
+          {t.fechaTerminoR&&<span className="inf-task-date">✅ {fmtDate(t.fechaTerminoR)}</span>}
+          <span className="inf-task-badge" style={{background:"rgba(255,255,255,0.07)",color:"var(--ink3)"}}>P{t.prioridad||"—"}</span>
+          {t.informeSocio&&<span className="inf-task-badge" style={{background:"rgba(26,95,110,0.12)",color:"var(--teal)"}}>📋 IS</span>}
+        </div>
+        {showOverdue&&<div className="inf-overdue-tag">⏱ Vencida hace {daysDiff(t.fechaTerminoE)}</div>}
+        {logs.length>0&&(
+          <div style={{marginTop:8}}>
+            {!logOpen&&lastLog&&(
+              <div className="inf-task-note" style={{cursor:"pointer"}} onClick={()=>setLogOpen(true)}>
+                {lastLog.date&&<div className="inf-task-note-date">{fmtDate(lastLog.date)}{lastLog.author&&<span style={{marginLeft:6,color:"var(--teal)"}}>— {lastLog.author}</span>}</div>}
+                <div>{lastLog.text}</div>
+                {logs.length>1&&<div style={{fontSize:10,color:"var(--teal)",marginTop:4,fontWeight:600}}>+ {logs.length-1} entrada{logs.length>2?"s":""} anterior{logs.length>2?"es":""} — ver todo ▾</div>}
+              </div>
+            )}
+            {logOpen&&(
+              <div>
+                {[...logs].reverse().map((l,i)=>(
+                  <div key={i} className="inf-task-note" style={{marginBottom:5}}>
+                    {l.date&&<div className="inf-task-note-date">{fmtDate(l.date)}{l.author&&<span style={{marginLeft:6,color:"var(--teal)"}}>— {l.author}</span>}</div>}
+                    <div>{l.text}</div>
+                  </div>
+                ))}
+                <div style={{fontSize:10,color:"var(--teal)",cursor:"pointer",fontWeight:600,marginTop:2}} onClick={()=>setLogOpen(false)}>▴ Colapsar bitácora</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const projShortName=project.name.split(" - ").slice(1).join(" - ")||project.name;
+  const chipBase={display:"inline-flex",alignItems:"center",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",border:"1px solid var(--line)",userSelect:"none",transition:"all 0.13s",marginBottom:2};
+  const chipOn={background:"var(--teal)",color:"#fff",borderColor:"var(--teal)"};
+  const chipOff={background:"var(--white)",color:"var(--ink3)"};
+
+  return(
+    <div className="inf-wrap">
+      <div className="inf-header" style={{borderBottomColor:project.color}}>
+        <div className="inf-header-top">
+          <div>
+            <div className="inf-eyebrow" style={{color:project.color}}>Informe de Estado</div>
+            <div className="inf-title">{projShortName}</div>
+            <div className="inf-subtitle">{dateStr} · {project.name.split(" - ")[0]}</div>
+          </div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14,paddingTop:14,borderTop:"1px solid var(--line)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:10,fontWeight:700,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:"0.8px",flexShrink:0,width:60}}>IS:</span>
+            {[["all","Todos"],["si","Socios"],["no","Sin IS"]].map(([v,l])=>(
+              <span key={v} style={{...chipBase,...(filterIS===v?chipOn:chipOff)}} onClick={()=>setFilterIS(v)}>{l}</span>
+            ))}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:10,fontWeight:700,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:"0.8px",flexShrink:0,width:60}}>Estado:</span>
+            {STATUS_OPTS.map(s=>(
+              <span key={s} style={{...chipBase,...(filterEstados.includes(s)?chipOn:chipOff)}} onClick={()=>toggleEstado(s)}>{s}</span>
+            ))}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:10,fontWeight:700,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:"0.8px",flexShrink:0,width:60}}>Prior.:</span>
+            {[["1","1 Alta"],["2","2 Media"],["3","3 Normal"],["4","4 Baja"]].map(([v,l])=>(
+              <span key={v} style={{...chipBase,...(filterPrios.includes(v)?chipOn:chipOff)}} onClick={()=>togglePrio(v)}>{l}</span>
+            ))}
+          </div>
+          {hasFilters&&<div><button className="btn btn-ghost btn-sm" onClick={()=>{setFilterIS("all");setFilterPrios([]);setFilterEstados([]);}}>✕ Limpiar filtros</button></div>}
+        </div>
+        <div className="inf-kpis" style={{marginTop:14}}>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{total}</div><div className="inf-kpi-label">Total{hasFilters?" (filtrado)":""}</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:pctColor}}>{pct}%</div><div className="inf-kpi-label">Avance</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--green)"}}>{done}</div><div className="inf-kpi-label">Completadas</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{enCurso.length}</div><div className="inf-kpi-label">En curso</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--red)"}}>{atrasadas.length}</div><div className="inf-kpi-label">Atrasadas</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--ink3)"}}>{pendientes.length}</div><div className="inf-kpi-label">Pendientes</div></div>
+        </div>
+        <div className="inf-progress-bar"><div className="inf-progress-fill" style={{width:pct+"%",background:pctColor}}/></div>
+      </div>
+
+      {atrasadas.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header" style={{borderBottomColor:"var(--red)"}}>
+            <span className="inf-section-icon">⚠️</span>
+            <span className="inf-section-title" style={{color:"var(--red)"}}>Atrasadas</span>
+            <span className="inf-section-count" style={{background:"var(--red-lt)",color:"var(--red)"}}>{atrasadas.length}</span>
+          </div>
+          {atrasadas.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--red)" showOverdue/>)}
+        </div>
+      )}
+      {enCurso.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header"><span className="inf-section-icon">🔄</span><span className="inf-section-title">En Curso</span><span className="inf-section-count">{enCurso.length}</span></div>
+          {enCurso.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--teal)"/>)}
+        </div>
+      )}
+      {pendientes.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header"><span className="inf-section-icon">📋</span><span className="inf-section-title">Pendientes</span><span className="inf-section-count">{pendientes.length}</span></div>
+          {pendientes.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--amber)"/>)}
+        </div>
+      )}
+      {completadas.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header"><span className="inf-section-icon">✅</span><span className="inf-section-title">Completadas</span><span className="inf-section-count">{completadas.length}</span></div>
+          {completadas.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--green)"/>)}
+        </div>
+      )}
+      {[atrasadas,enCurso,pendientes,completadas].every(s=>s.length===0)&&(
+        <div className="inf-empty">{hasFilters?"No hay tareas que coincidan con los filtros.":"No hay tareas en este proyecto."}</div>
+      )}
+    </div>
+  );
+}
 
 function DashboardView({projects, onSelectProject}) {
   const [filterCity, setFilterCity] = useState("all");
