@@ -2232,9 +2232,8 @@ function LoginScreen({onLogin}) {
   useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
 
   const handleLogin = async () => {
-    const u = localStorage.getItem("pl_url");
-    const k = localStorage.getItem("pl_key");
-    if(!u||!k) { setError("Primero configura las credenciales de Supabase."); return; }
+    const u = "https://jjphjrnvdjpchcekmqad.supabase.co";
+    const k = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
     if(!email.trim()||!password) { setError("Ingresa tu email y contraseña."); return; }
     setLoading(true); setError("");
     try {
@@ -2292,14 +2291,11 @@ function Root() {
   const [ready, setReady] = useState(false);
 
   useEffect(()=>{
-    const u=localStorage.getItem("pl_url");
-    const k=localStorage.getItem("pl_key");
-    if(u&&k){
-      db=new SupabaseClient(u,k);
-      // If we have a session token, use it for authenticated requests
-      if(session?.token) db.setAuthToken(session.token);
-      setReady(true);
-    }
+    const u="https://jjphjrnvdjpchcekmqad.supabase.co";
+    const k="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
+    db=new SupabaseClient(u,k);
+    if(session?.token) db.setAuthToken(session.token);
+    setReady(true);
   },[session]);
 
   const handleSetup=(u,k)=>{db=new SupabaseClient(u,k);setReady(true);};
@@ -2315,12 +2311,9 @@ function Root() {
     setSession(null);
   };
 
-  // Not yet configured with Supabase credentials
-  if(!ready && !localStorage.getItem("pl_url")) return <SetupScreen onSetup={handleSetup}/>;
   // Credentials exist but not logged in
   if(!session) return <LoginScreen onLogin={handleLogin}/>;
-  // Need to setup db first
-  if(!ready) return <SetupScreen onSetup={handleSetup}/>;
+  if(!ready) return null;
   return <App onSignOut={handleSignOut} userEmail={session.email}/>;
 }
 
