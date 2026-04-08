@@ -166,6 +166,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .log-edit-inp{background:#fff;border:1px solid var(--teal);border-radius:5px;padding:7px 11px;font-size:13px;color:var(--ink);outline:none;resize:none;min-height:56px;line-height:1.5;font-family:inherit}
 .log-edit-actions{display:flex;gap:6px;justify-content:flex-end}
 .log-add-row{display:flex;gap:7px;margin-top:9px}
+.log-author{font-size:10px;color:var(--teal);font-weight:700;margin-top:3px;opacity:0.8}
+.archived-badge{font-size:10px;color:var(--amber);background:var(--amber-lt);border-radius:4px;padding:1px 6px;font-weight:700;flex-shrink:0}
 .log-date-inp{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;font-size:12px;color:var(--ink);outline:none;width:126px}
 .log-date-inp:focus{border-color:var(--teal)}
 .log-text-inp{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 9px;font-size:13px;color:var(--ink);outline:none;resize:none;min-height:56px;line-height:1.5}
@@ -594,6 +596,7 @@ const STATUS_OPTS = ["Pendiente","En Proceso","Completado","Bloqueado"];
 const STATUS_CLASS = {"Pendiente":"s-pending","En Proceso":"s-inprogress","Completado":"s-done","Bloqueado":"s-blocked"};
 const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
 const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
+const UserContext = React.createContext("");
 const getCity = name => name.split(" - ")[0].trim();
 const getShortName = name => { const parts = name.split(" - "); return parts.length > 1 ? parts.slice(1).join(" - ") : name; };
 
@@ -674,7 +677,7 @@ const SUBGROUPS = {
   ],
 };
 
-function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
+function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchive}) {
   const firstCity = projects.length > 0 ? getCity(projects[0].name) : null;
   const [openCities, setOpenCities] = useState(() => {
     const init = {};
@@ -713,6 +716,10 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
         <span className="proj-dot" style={{background:p.color}}/>
         <span className="proj-name">{getShortName(p.name)}</span>
         <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+        <button onClick={e=>{e.stopPropagation();onArchive(p.id,true);}}
+          title="Archivar proyecto"
+          style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+          className="proj-del-btn">📦</button>
         <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
           style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
           className="proj-del-btn">🗑</button>
@@ -776,6 +783,7 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
 function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
+  const userEmail = React.useContext(UserContext);
   const [open,setOpen]=useState(false);
   const rowRef=useRef(null);
   useEffect(()=>{
@@ -791,7 +799,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
   const saveAndClose=()=>{onUpdate(actId,{...form});setOpen(false);};
   const addLog=()=>{
     if(!newLogText.trim())return;
-    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim()}]}));
+    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim(),author:userEmail||""}]}));
     setNewLogText("");
   };
   const delLog=lid=>setForm(f=>({...f,log:f.log.filter(l=>l.id!==lid)}));
@@ -885,7 +893,10 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
                   </div>
                 </div>
               ):(
-                <div className="log-text">{l.text}</div>
+                <div className="log-text">
+                  {l.author&&<div className="log-author">👤 {l.author}</div>}
+                  {l.text}
+                </div>
               )}
               <div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0}}>
                 <button className="log-edit" title="Editar nota" onClick={()=>startEditLog(l)}>✏</button>
@@ -1872,6 +1883,7 @@ function App({onSignOut, userEmail}) {
   const [activeTab,setActiveTab]=useState("actividades");
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [showDashboard,setShowDashboard]=useState(false);
+  const [showArchived,setShowArchived]=useState(false);
   const [globalSearch,setGlobalSearch]=useState("");
   const [showGlobalResults,setShowGlobalResults]=useState(false);
   const [isMobile,setIsMobile]=useState(()=>window.innerWidth<=768);
@@ -1960,6 +1972,7 @@ function App({onSignOut, userEmail}) {
     updActs(selId,acts=>[...acts,{id:uid(),name:newActName.trim(),tasks:[]}]);
     setShowNewAct(false);setNewActName("");
   };
+  const archiveProject=(pid,hidden)=>updateProjects(projects.map(p=>p.id===pid?{...p,is_hidden:hidden}:p));
   const deleteProject=(pid)=>{
     const remaining=projects.filter(p=>p.id!==pid);
     updateProjects(remaining);
@@ -2002,6 +2015,7 @@ function App({onSignOut, userEmail}) {
   const syncLabel={connected:"Sincronizado ✓",syncing:"Guardando...",error:"Error de conexión"};
 
   return (
+    <UserContext.Provider value={userEmail}>
     <div className="app">
       <div className="sidebar">
         <div className="sidebar-brand" style={{padding:"10px 12px 0px"}}>
@@ -2009,10 +2023,15 @@ function App({onSignOut, userEmail}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject}/>
+        <CitySidebar projects={projects.filter(p=>!p.is_hidden)} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject} onArchive={archiveProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects)}>⬇ Exportar CSV</button>
+          {projects.some(p=>p.is_hidden)&&(
+            <button className="sidebar-btn sbtn-export" onClick={()=>setShowArchived(true)} style={{color:"var(--amber)"}}>
+              📦 Archivados ({projects.filter(p=>p.is_hidden).length})
+            </button>
+          )}
           <div style={{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:8,paddingTop:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
             <span style={{fontSize:10,color:"#5a5750",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}} title={userEmail}>👤 {userEmail}</span>
             <button className="signout-btn" onClick={onSignOut} title="Cerrar sesión">Salir</button>
@@ -2104,7 +2123,7 @@ function App({onSignOut, userEmail}) {
         </div>
         <div className="content" style={showDashboard?{padding:0}:{}}>
           {showDashboard?(
-            <DashboardView projects={projects} onSelectProject={(info)=>{
+            <DashboardView projects={projects.filter(p=>!p.is_hidden)} onSelectProject={(info)=>{
               if(info && typeof info === 'object') {
                 setSelId(info.projId);
                 setJumpToTask({taskId: info.taskId, actId: info.actId});
@@ -2215,7 +2234,24 @@ function App({onSignOut, userEmail}) {
           </div>
         </Modal>
       )}
+      {showArchived&&(
+        <Modal title="Proyectos Archivados" onClose={()=>setShowArchived(false)}>
+          {projects.filter(p=>p.is_hidden).length===0?(
+            <div style={{color:"var(--ink3)",fontSize:13,padding:"8px 0"}}>No hay proyectos archivados.</div>
+          ):projects.filter(p=>p.is_hidden).map(p=>(
+            <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:"1px solid var(--line)"}}>
+              <span style={{width:9,height:9,borderRadius:"50%",background:p.color,display:"inline-block",flexShrink:0}}/>
+              <span style={{flex:1,fontSize:13,color:"var(--ink)",fontWeight:600}}>{p.name}</span>
+              <span className="archived-badge">Archivado</span>
+              <button className="btn btn-outline btn-sm" onClick={()=>{archiveProject(p.id,false);setShowArchived(false);setSelId(p.id);setShowDashboard(false);}}>
+                Restaurar
+              </button>
+            </div>
+          ))}
+        </Modal>
+      )}
     </div>
+    </UserContext.Provider>
   );
 }
 
