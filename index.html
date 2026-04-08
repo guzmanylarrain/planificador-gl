@@ -42,6 +42,15 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .city-name{flex:1;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:#7a7770}
 .city-count{font-size:10px;color:#4a4740;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:8px}
 .city-projects{padding-left:8px;border-left:1px solid rgba(255,255,255,0.06);margin-left:10px}
+/* Subgroups */
+.subgroup{margin-bottom:2px}
+.subgroup-header{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:5px;cursor:pointer;transition:all 0.14s;user-select:none}
+.subgroup-header:hover{background:rgba(255,255,255,0.03)}
+.subgroup-arrow{font-size:7px;color:#4a4740;transition:transform 0.2s;display:inline-block;width:9px;flex-shrink:0}
+.subgroup-arrow.open{transform:rotate(90deg)}
+.subgroup-name{flex:1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.9px;color:#5a5750}
+.subgroup-count{font-size:10px;color:#3a3730;background:rgba(255,255,255,0.04);padding:1px 5px;border-radius:7px}
+.subgroup-projects{padding-left:8px;border-left:1px solid rgba(255,255,255,0.04);margin-left:8px}
 
 /* Proyecto item */
 .proj-item{padding:7px 9px;border-radius:5px;cursor:pointer;transition:all 0.14s;font-size:12px;color:#908d86;display:flex;align-items:center;gap:7px;border:1px solid transparent;margin-bottom:1px}
@@ -651,6 +660,19 @@ function SetupScreen({onSetup}) {
 }
 
 // ── CITY SIDEBAR ────────────────────────────────────────────────────────────
+// Subgroup config: city -> [{label, match: fn}]
+const SUBGROUPS = {
+  "Antofagasta": [
+    {label:"Antillas", match: n => /antillas/i.test(n)},
+    {label:"Parque Norte", match: n => /halcones|vicuñas|cóndores|condores|alpacas|flamencos|tamarugal/i.test(n)},
+    {label:"Otros", match: n => /petra|lote 5|lote 1z/i.test(n)},
+  ],
+  "Maipú": [
+    {label:"El Rosal", match: n => /rosal oriente/i.test(n)},
+    {label:"Barrio Oeste", match: n => /barrio oeste/i.test(n)},
+  ],
+};
+
 function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
   const firstCity = projects.length > 0 ? getCity(projects[0].name) : null;
   const [openCities, setOpenCities] = useState(() => {
@@ -658,17 +680,21 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
     if(firstCity) init[firstCity] = true;
     return init;
   });
+  const [openSubgroups, setOpenSubgroups] = useState({});
 
-  // Auto-open city of selected project
+  // Auto-open city and subgroup of selected project
   useEffect(() => {
     if(!selId) return;
     const p = projects.find(p => p.id === selId);
     if(!p) return;
     const city = getCity(p.name);
+    const short = getShortName(p.name);
     setOpenCities(prev => ({...prev, [city]: true}));
+    const sgs = SUBGROUPS[city] || [];
+    const sg = sgs.find(s => s.match(short));
+    if(sg) setOpenSubgroups(prev => ({...prev, [`${city}__${sg.label}`]: true}));
   }, [selId]);
 
-  // Group by city, preserve order
   const cityMap = {};
   const cityOrder = [];
   for(const p of projects) {
@@ -677,7 +703,21 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
     cityMap[city].push(p);
   }
 
-  const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
+  const toggleCity = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
+  const toggleSG = key => setOpenSubgroups(prev => ({...prev, [key]: !prev[key]}));
+
+  function renderProj(p) {
+    return (
+      <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
+        <span className="proj-dot" style={{background:p.color}}/>
+        <span className="proj-name">{getShortName(p.name)}</span>
+        <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+        <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
+          style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+          className="proj-del-btn">🗑</button>
+      </div>
+    );
+  }
 
   return (
     <div className="proj-list">
@@ -685,25 +725,45 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
         const projs = cityMap[city];
         const isOpen = !!openCities[city];
         const hasActive = projs.some(p => p.id === selId);
+        const sgs = SUBGROUPS[city] || [];
+
+        // Partition projects into subgroups + ungrouped
+        let ungrouped = [...projs];
+        const sgBuckets = sgs.map(sg => {
+          const matched = projs.filter(p => sg.match(getShortName(p.name)));
+          ungrouped = ungrouped.filter(p => !sg.match(getShortName(p.name)));
+          return {...sg, projs: matched};
+        }).filter(sg => sg.projs.length > 0);
+
         return (
           <div key={city} className="city-group">
-            <div className="city-header" onClick={() => toggle(city)}>
+            <div className="city-header" onClick={() => toggleCity(city)}>
               <span className={`city-arrow${isOpen?" open":""}`}>▶</span>
               <span className="city-name" style={hasActive?{color:"#a0c8d0"}:{}}>{city}</span>
               <span className="city-count">{projs.length}</span>
             </div>
             {isOpen && (
               <div className="city-projects">
-                {projs.map(p => (
-                  <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
-                    <span className="proj-dot" style={{background:p.color}}/>
-                    <span className="proj-name">{getShortName(p.name)}</span>
-                    <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
-                    <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
-                      style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
-                      className="proj-del-btn">🗑</button>
-                  </div>
-                ))}
+                {sgBuckets.map(sg => {
+                  const sgKey = `${city}__${sg.label}`;
+                  const sgOpen = !!openSubgroups[sgKey];
+                  const sgActive = sg.projs.some(p => p.id === selId);
+                  return (
+                    <div key={sgKey} className="subgroup">
+                      <div className="subgroup-header" onClick={() => toggleSG(sgKey)}>
+                        <span className={`subgroup-arrow${sgOpen?" open":""}`}>▶</span>
+                        <span className="subgroup-name" style={sgActive?{color:"#7ab8c0"}:{}}>{sg.label}</span>
+                        <span className="subgroup-count">{sg.projs.length}</span>
+                      </div>
+                      {sgOpen && (
+                        <div className="subgroup-projects">
+                          {sg.projs.map(p => renderProj(p))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {ungrouped.map(p => renderProj(p))}
               </div>
             )}
           </div>
@@ -714,8 +774,15 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
   const [open,setOpen]=useState(false);
+  const rowRef=useRef(null);
+  useEffect(()=>{
+    if(forceOpen){
+      setOpen(true);
+      setTimeout(()=>{rowRef.current&&rowRef.current.scrollIntoView({behavior:"smooth",block:"center"});},120);
+    }
+  },[forceOpen]);
   const [form,setForm]=useState({...task,log:task.log||[]});
   const [newLogDate,setNewLogDate]=useState(today());
   const [newLogText,setNewLogText]=useState("");
@@ -735,7 +802,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
   const lastLog=form.log.length>0?form.log[form.log.length-1]:null;
   const overdue=isOverdue(task.fechaTerminoE)&&task.estado!=="Completado";
   return (
-    <div className="task-row-wrap">
+    <div className="task-row-wrap" ref={rowRef}>
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
         <div className="td td-num">{globalIdx}</div>
         <div className="td">
@@ -844,8 +911,15 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx}) {
-  const [collapsed,setCollapsed]=useState(true);
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask,onJumpUsed}) {
+  const hasJump = jumpToTask && jumpToTask.actId === activity.id;
+  const [collapsed,setCollapsed]=useState(!hasJump);
+  useEffect(()=>{
+    if(hasJump){
+      setCollapsed(false);
+      if(onJumpUsed) setTimeout(onJumpUsed, 600);
+    }
+  },[hasJump]);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
@@ -887,7 +961,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
           {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i}/>
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -1469,7 +1543,7 @@ function DashboardView({projects, onSelectProject}) {
   // When city changes, reset project selection
   React.useEffect(()=>setSelectedProjs([]),[filterCity]);
 
-  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
+  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name,actId:a.id}))));
   const allResponsables = [...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
   const allTasks = filterResp==="all" ? allTasksRaw : allTasksRaw.filter(t=>t.responsable===filterResp);
   const done = allTasks.filter(t=>t.estado==="Completado").length;
@@ -1581,7 +1655,7 @@ function DashboardView({projects, onSelectProject}) {
           <h4>Tareas más atrasadas</h4>
           {overdueTasks.length===0?<p style={{color:"var(--ink3)",fontSize:12,textAlign:"center",padding:20}}>✅ Sin tareas atrasadas</p>:
           overdueTasks.map((t,i)=>(
-            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject(t.projId)}>
+            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
               <span className="dash-overdue-days">{daysDiff(t.fechaTerminoE)}</span>
               <div className="dash-overdue-info">
                 <div className="dash-overdue-task">{t.tarea}</div>
@@ -1601,7 +1675,7 @@ function DashboardView({projects, onSelectProject}) {
             const bg=diff<=7?"var(--red-lt)":diff<=14?"rgba(230,160,0,0.12)":"rgba(20,160,180,0.1)";
             const col=diff<=7?"var(--red)":diff<=14?"var(--amber)":"var(--teal)";
             return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
                 <span className="dash-upcoming-badge" style={{background:bg,color:col}}>{daysUntil(t.fechaTerminoE)}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
@@ -1620,7 +1694,7 @@ function DashboardView({projects, onSelectProject}) {
               const isOverdueIS=t.fechaTerminoE&&t.fechaTerminoE<today;
               const badge=isOverdueIS?{bg:"var(--red-lt)",col:"var(--red)",label:"⚠ Atrasado"}:{bg:"rgba(20,160,180,0.12)",col:"var(--teal)",label:t.estado};
               return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
                 <span className="dash-upcoming-badge" style={{background:badge.bg,color:badge.col}}>{badge.label}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
@@ -1783,6 +1857,7 @@ function MobileProjectList({projects, onSelect}) {
 function App({onSignOut, userEmail}) {
   const [projects,setProjects]=useState([]);
   const [selId,setSelId]=useState(null);
+  const [jumpToTask,setJumpToTask]=useState(null); // {taskId, actId}
   const [syncStatus,setSyncStatus]=useState("syncing");
   const [lastSync,setLastSync]=useState(null);
   const [loading,setLoading]=useState(true);
@@ -2028,7 +2103,16 @@ function App({onSignOut, userEmail}) {
         </div>
         <div className="content" style={showDashboard?{padding:0}:{}}>
           {showDashboard?(
-            <DashboardView projects={projects} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}}/>
+            <DashboardView projects={projects} onSelectProject={(info)=>{
+              if(info && typeof info === 'object') {
+                setSelId(info.projId);
+                setJumpToTask({taskId: info.taskId, actId: info.actId});
+              } else {
+                setSelId(info);
+                setJumpToTask(null);
+              }
+              setShowDashboard(false);setActiveTab("actividades");
+            }}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
@@ -2072,7 +2156,7 @@ function App({onSignOut, userEmail}) {
                     </div>
                   )}
                   {filteredActs.map((a,ai)=>(
-                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1}/>
+                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} jumpToTask={jumpToTask} onJumpUsed={()=>setJumpToTask(null)}/>
                   ))}
                 </>
               )}
