@@ -597,6 +597,11 @@ const STATUS_CLASS = {"Pendiente":"s-pending","En Proceso":"s-inprogress","Compl
 const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
 const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
 const UserContext = React.createContext("");
+function emailToName(email) {
+  if(!email) return "";
+  const local = email.split("@")[0];
+  return local.split(".").map(s=>s.charAt(0).toUpperCase()+s.slice(1).toLowerCase()).join(" ");
+}
 const getCity = name => name.split(" - ")[0].trim();
 const getShortName = name => { const parts = name.split(" - "); return parts.length > 1 ? parts.slice(1).join(" - ") : name; };
 
@@ -799,7 +804,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
   const saveAndClose=()=>{onUpdate(actId,{...form});setOpen(false);};
   const addLog=()=>{
     if(!newLogText.trim())return;
-    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim(),author:userEmail||""}]}));
+    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim(),author:emailToName(userEmail)||""}]}));
     setNewLogText("");
   };
   const delLog=lid=>setForm(f=>({...f,log:f.log.filter(l=>l.id!==lid)}));
@@ -1421,27 +1426,39 @@ function DonutChart({data}) {
 }
 
 function InformeView({project}) {
-  const [soloIS, setSoloIS] = useState(false);
+  const [filterIS, setFilterIS] = useState("all"); // "all" | "si" | "no"
+  const [filterPrio, setFilterPrio] = useState("all");
+  const [filterEstado, setFilterEstado] = useState("all");
   const today=new Date().toISOString().slice(0,10);
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
 
   const allTasks=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
-  const filt=t=>!soloIS||t.informeSocio;
 
-  const atrasadas=allTasks.filter(t=>filt(t)&&t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
+  const applyFilters=t=>{
+    if(filterIS==="si"&&!t.informeSocio) return false;
+    if(filterIS==="no"&&t.informeSocio) return false;
+    if(filterPrio!=="all"&&String(t.prioridad)!==filterPrio) return false;
+    if(filterEstado!=="all"&&t.estado!==filterEstado) return false;
+    return true;
+  };
+
+  const filtered=allTasks.filter(applyFilters);
+
+  const atrasadas=filtered.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
     .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE));
-  const enCurso=allTasks.filter(t=>filt(t)&&t.estado==="En Proceso")
+  const enCurso=filtered.filter(t=>t.estado==="En Proceso")
     .sort((a,b)=>(a.fechaTerminoE||"").localeCompare(b.fechaTerminoE||""));
-  const pendientes=allTasks.filter(t=>filt(t)&&t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
+  const pendientes=filtered.filter(t=>t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
     .sort((a,b)=>(a.fechaTerminoE||"zzz").localeCompare(b.fechaTerminoE||"zzz"));
-  const recientes=allTasks.filter(t=>filt(t)&&t.estado==="Completado"&&t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)
+  const recientes=filtered.filter(t=>t.estado==="Completado"&&t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)
     .sort((a,b)=>b.fechaTerminoR.localeCompare(a.fechaTerminoR));
 
-  const done=allTasks.filter(t=>t.estado==="Completado").length;
-  const total=allTasks.length;
+  const done=filtered.filter(t=>t.estado==="Completado").length;
+  const total=filtered.length;
   const pct=total>0?Math.round(done/total*100):0;
   const pctColor=pct===100?"var(--green)":pct>=50?project.color:"var(--amber)";
+  const hasFilters=filterIS!=="all"||filterPrio!=="all"||filterEstado!=="all";
 
   const fmtDate=d=>{if(!d||d.length<8)return"—";const[y,m,day]=d.split("-");return`${day}/${m}/${y.slice(2)}`;};
   const lastLog=t=>t.log&&t.log.length>0?t.log[t.log.length-1]:null;
@@ -1458,6 +1475,7 @@ function InformeView({project}) {
           {t.responsable&&<span className="inf-task-resp">👤 {t.responsable}</span>}
           {t.fechaTerminoE&&<span className="inf-task-date">📅 Término E: {fmtDate(t.fechaTerminoE)}</span>}
           {t.fechaTerminoR&&<span className="inf-task-date">✅ Completado: {fmtDate(t.fechaTerminoR)}</span>}
+          <span className="inf-task-badge" style={{background:"rgba(255,255,255,0.07)",color:"var(--ink3)"}}>P{t.prioridad||"—"}</span>
           {t.informeSocio&&<span className="inf-task-badge" style={{background:"rgba(26,95,110,0.12)",color:"var(--teal)"}}>📋 IS</span>}
         </div>
         {log&&(
@@ -1470,21 +1488,8 @@ function InformeView({project}) {
     );
   }
 
-  function Section({icon,title,tasks,accentColor,headerStyle}) {
-    if(tasks.length===0)return null;
-    return(
-      <div className="inf-section">
-        <div className="inf-section-header" style={headerStyle||{}}>
-          <span className="inf-section-icon">{icon}</span>
-          <span className="inf-section-title" style={headerStyle?{color:headerStyle.borderBottomColor}:{}}>{title}</span>
-          <span className="inf-section-count" style={headerStyle?{background:"rgba(192,57,43,0.1)",color:"var(--red)"}:{}}>{tasks.length}</span>
-        </div>
-        {tasks.map((t,i)=><TaskCard key={i} t={t} accentColor={accentColor}/>)}
-      </div>
-    );
-  }
-
   const projShortName=project.name.split(" - ").slice(1).join(" - ")||project.name;
+  const selStyle={background:"var(--white)",border:"1px solid var(--line)",borderRadius:7,padding:"5px 10px",fontSize:12,color:"var(--ink2)",outline:"none",cursor:"pointer"};
 
   return(
     <div className="inf-wrap">
@@ -1496,13 +1501,29 @@ function InformeView({project}) {
             <div className="inf-subtitle">{dateStr} · {project.name.split(" - ")[0]}</div>
           </div>
           <div className="inf-controls">
-            <button className={"inf-toggle"+(soloIS?" on":"")} onClick={()=>setSoloIS(s=>!s)}>
-              📋 {soloIS?"Solo Informe Socios":"Todo el equipo"}
-            </button>
+            <div style={{display:"flex",gap:7,flexWrap:"wrap",justifyContent:"flex-end"}}>
+              <select style={selStyle} value={filterIS} onChange={e=>setFilterIS(e.target.value)}>
+                <option value="all">IS: Todos</option>
+                <option value="si">Solo Informe Socios</option>
+                <option value="no">Sin Informe Socios</option>
+              </select>
+              <select style={selStyle} value={filterEstado} onChange={e=>setFilterEstado(e.target.value)}>
+                <option value="all">Todos los estados</option>
+                {STATUS_OPTS.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+              <select style={selStyle} value={filterPrio} onChange={e=>setFilterPrio(e.target.value)}>
+                <option value="all">Todas las prioridades</option>
+                <option value="1">1 — Alta</option>
+                <option value="2">2 — Media</option>
+                <option value="3">3 — Normal</option>
+                <option value="4">4 — Baja</option>
+              </select>
+              {hasFilters&&<button className="btn btn-ghost btn-sm" onClick={()=>{setFilterIS("all");setFilterPrio("all");setFilterEstado("all");}}>✕ Limpiar</button>}
+            </div>
           </div>
         </div>
         <div className="inf-kpis">
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{total}</div><div className="inf-kpi-label">Total tareas</div></div>
+          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{total}</div><div className="inf-kpi-label">Total{hasFilters?" (filtrado)":""}</div></div>
           <div className="inf-kpi"><div className="inf-kpi-val" style={{color:pctColor}}>{pct}%</div><div className="inf-kpi-label">Avance</div></div>
           <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--green)"}}>{done}</div><div className="inf-kpi-label">Completadas</div></div>
           <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{enCurso.length}</div><div className="inf-kpi-label">En curso</div></div>
@@ -1528,13 +1549,28 @@ function InformeView({project}) {
         </div>
       )}
 
-      <Section icon="🔄" title="En Curso" tasks={enCurso} accentColor="var(--teal)"/>
-      <Section icon="📋" title="Próximas / Pendientes" tasks={pendientes} accentColor="var(--amber)"/>
-      <Section icon="✅" title="Completadas — últimas 3 semanas" tasks={recientes} accentColor="var(--green)"/>
+      {enCurso.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header"><span className="inf-section-icon">🔄</span><span className="inf-section-title">En Curso</span><span className="inf-section-count">{enCurso.length}</span></div>
+          {enCurso.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--teal)"/>)}
+        </div>
+      )}
+      {pendientes.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header"><span className="inf-section-icon">📋</span><span className="inf-section-title">Próximas / Pendientes</span><span className="inf-section-count">{pendientes.length}</span></div>
+          {pendientes.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--amber)"/>)}
+        </div>
+      )}
+      {recientes.length>0&&(
+        <div className="inf-section">
+          <div className="inf-section-header"><span className="inf-section-icon">✅</span><span className="inf-section-title">Completadas — últimas 3 semanas</span><span className="inf-section-count">{recientes.length}</span></div>
+          {recientes.map((t,i)=><TaskCard key={i} t={t} accentColor="var(--green)"/>)}
+        </div>
+      )}
 
       {[atrasadas,enCurso,pendientes,recientes].every(s=>s.length===0)&&(
         <div className="inf-empty">
-          {soloIS?"No hay tareas marcadas como Informe Socios en este proyecto.":"No hay tareas para mostrar en este período."}
+          {hasFilters?"No hay tareas que coincidan con los filtros aplicados.":"No hay tareas para mostrar en este período."}
         </div>
       )}
     </div>
