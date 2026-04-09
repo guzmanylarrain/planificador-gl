@@ -41,6 +41,14 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .city-arrow.open{transform:rotate(90deg)}
 .city-name{flex:1;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:#7a7770}
 .city-count{font-size:10px;color:#4a4740;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:8px}
+.subgroup{margin-bottom:2px}
+.subgroup-header{display:flex;align-items:center;gap:6px;padding:5px 8px 5px 20px;border-radius:5px;cursor:pointer;transition:all 0.14s;user-select:none;font-size:11px;color:#6a6760}
+.subgroup-header:hover{background:rgba(255,255,255,0.03);color:#908d86}
+.subgroup-arrow{font-size:7px;color:#4a4740;transition:transform 0.2s;display:inline-block}
+.subgroup-arrow.open{transform:rotate(90deg)}
+.subgroup-name{flex:1}
+.subgroup-count{font-size:10px;color:#4a4740;background:rgba(255,255,255,0.04);padding:1px 5px;border-radius:8px}
+.subgroup-projects .proj-item{padding-left:28px}
 .city-projects{padding-left:8px;border-left:1px solid rgba(255,255,255,0.06);margin-left:10px}
 
 /* Proyecto item */
@@ -118,17 +126,17 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .act-icon-btn{background:none;border:none;color:#777;padding:4px 5px;border-radius:4px;cursor:pointer;font-size:12px;transition:all 0.13s}
 .act-icon-btn:hover{color:#e0ddd8;background:rgba(255,255,255,0.09)}
 .act-icon-btn.del:hover{color:#e05c5c}
-.tasks-table-head{display:grid;grid-template-columns:44px 60px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
+.tasks-table-head{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
 .th{padding:7px 11px;font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);font-weight:600}
 .task-row-wrap{border-bottom:1px solid var(--line)}.task-row-wrap:last-child{border-bottom:none}
-.task-row{display:grid;grid-template-columns:44px 60px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
+.task-row{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
 .task-row:hover{background:var(--bg)}.task-row.expanded{background:var(--gray-lt)}
 .td{padding:9px 11px;font-size:13px;overflow:hidden}
 .td-num{color:var(--ink3);font-size:11.5px;text-align:center}
 .task-name{font-weight:500;color:var(--ink);line-height:1.3}
-.tipo-badge{font-size:12px;font-weight:800;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
-.tipo-T{background:rgba(26,122,74,0.15);color:var(--green)}
-.tipo-R{background:rgba(192,57,43,0.13);color:var(--red)}
+.tipo-badge{font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.tipo-T{background:rgba(26,122,74,0.18);color:var(--green)}
+.tipo-R{background:rgba(192,57,43,0.15);color:var(--red)}
 .task-desc-preview{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .prio-badge{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;font-size:10.5px;font-weight:700}
 .prio-1{background:var(--red-lt);color:var(--red)}.prio-2{background:var(--amber-lt);color:var(--amber)}
@@ -584,6 +592,12 @@ const today = () => new Date().toISOString().slice(0,10);
 const fmtDate = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return `${day}/${m}/${y}`; };
 const isOverdue = d => d && d < today();
 const STATUS_OPTS = ["Pendiente","En Proceso","Completado","Bloqueado"];
+const UserContext = React.createContext("");
+function emailToName(email) {
+  if(!email) return "";
+  const local = email.split("@")[0];
+  return local.split(".").map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(" ");
+}
 const STATUS_CLASS = {"Pendiente":"s-pending","En Proceso":"s-inprogress","Completado":"s-done","Bloqueado":"s-blocked"};
 const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
 const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
@@ -654,24 +668,40 @@ function SetupScreen({onSetup}) {
 }
 
 // ── CITY SIDEBAR ────────────────────────────────────────────────────────────
-function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
+// Subgroup config
+const SUBGROUPS = {
+  "Antofagasta": [
+    {label:"Antillas", match: n => /antillas/i.test(n)},
+    {label:"Parque Norte", match: n => /halcones|vicuñas|cóndores|condores|alpacas|flamencos|tamarugal/i.test(n)},
+    {label:"Otros", match: n => /petra|lote 5|lote 1z/i.test(n)},
+  ],
+  "Maipú": [
+    {label:"El Rosal", match: n => /rosal oriente/i.test(n)},
+    {label:"Barrio Oeste", match: n => /barrio oeste/i.test(n)},
+  ],
+};
+
+function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchive}) {
   const firstCity = projects.length > 0 ? getCity(projects[0].name) : null;
   const [openCities, setOpenCities] = useState(() => {
     const init = {};
     if(firstCity) init[firstCity] = true;
     return init;
   });
+  const [openSubgroups, setOpenSubgroups] = useState({});
 
-  // Auto-open city of selected project
   useEffect(() => {
     if(!selId) return;
     const p = projects.find(p => p.id === selId);
     if(!p) return;
     const city = getCity(p.name);
+    const short = getShortName(p.name);
     setOpenCities(prev => ({...prev, [city]: true}));
+    const sgs = SUBGROUPS[city] || [];
+    const sg = sgs.find(s => s.match(short));
+    if(sg) setOpenSubgroups(prev => ({...prev, [`${city}__${sg.label}`]: true}));
   }, [selId]);
 
-  // Group by city, preserve order
   const cityMap = {};
   const cityOrder = [];
   for(const p of projects) {
@@ -680,7 +710,25 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
     cityMap[city].push(p);
   }
 
-  const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
+  const toggleCity = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
+  const toggleSG = key => setOpenSubgroups(prev => ({...prev, [key]: !prev[key]}));
+
+  function renderProj(p) {
+    return (
+      <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
+        <span className="proj-dot" style={{background:p.color}}/>
+        <span className="proj-name">{getShortName(p.name)}</span>
+        <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+        <button onClick={e=>{e.stopPropagation();onArchive(p.id,true);}}
+          title="Archivar proyecto"
+          style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+          className="proj-del-btn">📦</button>
+        <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
+          style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+          className="proj-del-btn">🗑</button>
+      </div>
+    );
+  }
 
   return (
     <div className="proj-list">
@@ -688,25 +736,42 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
         const projs = cityMap[city];
         const isOpen = !!openCities[city];
         const hasActive = projs.some(p => p.id === selId);
+        const sgs = SUBGROUPS[city] || [];
+        let ungrouped = [...projs];
+        const sgBuckets = sgs.map(sg => {
+          const matched = projs.filter(p => sg.match(getShortName(p.name)));
+          ungrouped = ungrouped.filter(p => !sg.match(getShortName(p.name)));
+          return {...sg, projs: matched};
+        }).filter(sg => sg.projs.length > 0);
         return (
           <div key={city} className="city-group">
-            <div className="city-header" onClick={() => toggle(city)}>
+            <div className="city-header" onClick={() => toggleCity(city)}>
               <span className={`city-arrow${isOpen?" open":""}`}>▶</span>
               <span className="city-name" style={hasActive?{color:"#a0c8d0"}:{}}>{city}</span>
               <span className="city-count">{projs.length}</span>
             </div>
             {isOpen && (
               <div className="city-projects">
-                {projs.map(p => (
-                  <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
-                    <span className="proj-dot" style={{background:p.color}}/>
-                    <span className="proj-name">{getShortName(p.name)}</span>
-                    <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
-                    <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
-                      style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
-                      className="proj-del-btn">🗑</button>
-                  </div>
-                ))}
+                {sgBuckets.map(sg => {
+                  const sgKey = `${city}__${sg.label}`;
+                  const sgOpen = !!openSubgroups[sgKey];
+                  const sgActive = sg.projs.some(p => p.id === selId);
+                  return (
+                    <div key={sgKey} className="subgroup">
+                      <div className="subgroup-header" onClick={() => toggleSG(sgKey)}>
+                        <span className={`subgroup-arrow${sgOpen?" open":""}`}>▶</span>
+                        <span className="subgroup-name" style={sgActive?{color:"#7ab8c0"}:{}}>{sg.label}</span>
+                        <span className="subgroup-count">{sg.projs.length}</span>
+                      </div>
+                      {sgOpen && (
+                        <div className="subgroup-projects">
+                          {sg.projs.map(p => renderProj(p))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {ungrouped.map(p => renderProj(p))}
               </div>
             )}
           </div>
@@ -717,16 +782,25 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
   const [open,setOpen]=useState(false);
+  const rowRef=useRef(null);
+  useEffect(()=>{
+    if(forceOpen){
+      setOpen(true);
+      setTimeout(()=>rowRef.current?.scrollIntoView({behavior:"smooth",block:"center"}),100);
+    }
+  },[forceOpen]);
   const [form,setForm]=useState({...task,log:task.log||[]});
   const [newLogDate,setNewLogDate]=useState(today());
   const [newLogText,setNewLogText]=useState("");
+  const userEmail=React.useContext(UserContext);
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const saveAndClose=()=>{onUpdate(actId,{...form});setOpen(false);};
-  const addLog=()=>{
+  const addLog=()=>{\
     if(!newLogText.trim())return;
-    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim()}]}));
+    const author=emailToName(userEmail)||"";
+    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim(),author}]}));
     setNewLogText("");
   };
   const delLog=lid=>setForm(f=>({...f,log:f.log.filter(l=>l.id!==lid)}));
@@ -738,10 +812,10 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
   const lastLog=form.log.length>0?form.log[form.log.length-1]:null;
   const overdue=isOverdue(task.fechaTerminoE)&&task.estado!=="Completado";
   return (
-    <div className="task-row-wrap">
+    <div className="task-row-wrap" ref={rowRef}>
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
         <div className="td td-num">{globalIdx}</div>
-        <div className="td" style={{textAlign:"center"}}>
+        <div className="td" style={{textAlign:"center",padding:"0 2px"}}>
           {task.tipo&&<span className={`tipo-badge tipo-${task.tipo}`}>{task.tipo}</span>}
         </div>
         <div className="td">
@@ -850,8 +924,10 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx}) {
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx}) {
-  const [collapsed,setCollapsed]=useState(true);
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask}) {
+  const hasJump = jumpToTask && jumpToTask.actId === activity.id;
+  const [collapsed,setCollapsed]=useState(!hasJump);
+  useEffect(()=>{if(hasJump)setCollapsed(false);},[hasJump]);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
@@ -883,7 +959,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
         <>
           <div className="tasks-table-head">
             <div className="th" style={{textAlign:"center"}}>#</div>
-            <div className="th" style={{textAlign:"center"}}>Tipo</div>
+            <div className="th" style={{textAlign:"center"}}></div>
             <div className="th">Tarea / Restricción</div>
             <div className="th" style={{textAlign:"center"}}>Prior.</div>
             <div className="th">Estado</div>
@@ -894,7 +970,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
           {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i}/>
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -1477,7 +1553,7 @@ function DashboardView({projects, onSelectProject}) {
   // When city changes, reset project selection
   React.useEffect(()=>setSelectedProjs([]),[filterCity]);
 
-  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
+  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name,actId:a.id}))));
   const allResponsables = [...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
   const allTasks = filterResp==="all" ? allTasksRaw : allTasksRaw.filter(t=>t.responsable===filterResp);
   const done = allTasks.filter(t=>t.estado==="Completado").length;
@@ -1589,7 +1665,7 @@ function DashboardView({projects, onSelectProject}) {
           <h4>Tareas más atrasadas</h4>
           {overdueTasks.length===0?<p style={{color:"var(--ink3)",fontSize:12,textAlign:"center",padding:20}}>✅ Sin tareas atrasadas</p>:
           overdueTasks.map((t,i)=>(
-            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject(t.projId)}>
+            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
               <span className="dash-overdue-days">{daysDiff(t.fechaTerminoE)}</span>
               <div className="dash-overdue-info">
                 <div className="dash-overdue-task">{t.tarea}</div>
@@ -1609,7 +1685,7 @@ function DashboardView({projects, onSelectProject}) {
             const bg=diff<=7?"var(--red-lt)":diff<=14?"rgba(230,160,0,0.12)":"rgba(20,160,180,0.1)";
             const col=diff<=7?"var(--red)":diff<=14?"var(--amber)":"var(--teal)";
             return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
                 <span className="dash-upcoming-badge" style={{background:bg,color:col}}>{daysUntil(t.fechaTerminoE)}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
@@ -1628,7 +1704,7 @@ function DashboardView({projects, onSelectProject}) {
               const isOverdueIS=t.fechaTerminoE&&t.fechaTerminoE<today;
               const badge=isOverdueIS?{bg:"var(--red-lt)",col:"var(--red)",label:"⚠ Atrasado"}:{bg:"rgba(20,160,180,0.12)",col:"var(--teal)",label:t.estado};
               return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
                 <span className="dash-upcoming-badge" style={{background:badge.bg,color:badge.col}}>{badge.label}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
@@ -1792,6 +1868,8 @@ function MobileProjectList({projects, onSelect}) {
 function App({onSignOut, userEmail}) {
   const [projects,setProjects]=useState([]);
   const [selId,setSelId]=useState(null);
+  const [jumpToTask,setJumpToTask]=useState(null);
+  const [showArchived,setShowArchived]=useState(false);
   const [syncStatus,setSyncStatus]=useState("syncing");
   const [lastSync,setLastSync]=useState(null);
   const [loading,setLoading]=useState(true);
@@ -1894,6 +1972,7 @@ function App({onSignOut, userEmail}) {
     updActs(selId,acts=>[...acts,{id:uid(),name:newActName.trim(),tasks:[]}]);
     setShowNewAct(false);setNewActName("");
   };
+  const archiveProject=(pid,hidden)=>updateProjects(projects.map(p=>p.id===pid?{...p,is_hidden:hidden}:p));
   const deleteProject=(pid)=>{
     const remaining=projects.filter(p=>p.id!==pid);
     updateProjects(remaining);
@@ -1944,10 +2023,13 @@ function App({onSignOut, userEmail}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject}/>
+        <CitySidebar projects={projects.filter(p=>!p.is_hidden)} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject} onArchive={archiveProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects)}>⬇ Exportar CSV</button>
+          {projects.filter(p=>p.is_hidden).length>0&&(
+            <button className="sidebar-btn" style={{background:"rgba(255,255,255,0.04)",color:"#908d86"}} onClick={()=>setShowArchived(true)}>📦 Archivados ({projects.filter(p=>p.is_hidden).length})</button>
+          )}
           <div style={{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:8,paddingTop:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
             <span style={{fontSize:10,color:"#5a5750",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}} title={userEmail}>👤 {userEmail}</span>
             <button className="signout-btn" onClick={onSignOut} title="Cerrar sesión">Salir</button>
@@ -2039,7 +2121,14 @@ function App({onSignOut, userEmail}) {
         </div>
         <div className="content" style={showDashboard?{padding:0}:{}}>
           {showDashboard?(
-            <DashboardView projects={projects} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}}/>
+            <DashboardView projects={projects.filter(p=>!p.is_hidden)} onSelectProject={(info)=>{
+              if(typeof info==="object"&&info.projId){
+                setSelId(info.projId);setJumpToTask({taskId:info.taskId,actId:info.actId});
+              } else {
+                setSelId(info);setJumpToTask(null);
+              }
+              setShowDashboard(false);setActiveTab("actividades");
+            }}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
@@ -2088,7 +2177,7 @@ function App({onSignOut, userEmail}) {
                     </div>
                   )}
                   {filteredActs.map((a,ai)=>(
-                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1}/>
+                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} jumpToTask={jumpToTask}/>
                   ))}
                 </>
               )}
@@ -2105,6 +2194,22 @@ function App({onSignOut, userEmail}) {
           )}
         </div>
       </div>
+
+      {showArchived&&(
+        <Modal title="Proyectos Archivados" onClose={()=>setShowArchived(false)}>
+          {projects.filter(p=>p.is_hidden).length===0?(
+            <div style={{color:"var(--ink3)",fontSize:13,padding:"20px 0",textAlign:"center"}}>No hay proyectos archivados.</div>
+          ):(
+            projects.filter(p=>p.is_hidden).map(p=>(
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid var(--line)"}}>
+                <span className="proj-dot" style={{background:p.color,flexShrink:0}}/>
+                <span style={{flex:1,fontSize:13,color:"var(--ink)"}}>{p.name}</span>
+                <button className="btn btn-ghost btn-sm" onClick={()=>{archiveProject(p.id,false);if(projects.filter(q=>q.is_hidden).length<=1)setShowArchived(false);}}>Restaurar</button>
+              </div>
+            ))
+          )}
+        </Modal>
+      )}
 
       {showNewProj&&(()=>{
         const existingCities=[...new Set(projects.map(p=>p.name.split(" - ")[0].trim()))].sort();
@@ -2223,8 +2328,8 @@ function Root() {
   const [ready, setReady] = useState(false);
 
   useEffect(()=>{
-    const u=localStorage.getItem("pl_url");
-    const k=localStorage.getItem("pl_key");
+    const u=localStorage.getItem("pl_url") || "https://jjphjrnvdjpchcekmqad.supabase.co";
+    const k=localStorage.getItem("pl_key") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
     if(u&&k){
       db=new SupabaseClient(u,k);
       // If we have a session token, use it for authenticated requests
@@ -2247,12 +2352,12 @@ function Root() {
   };
 
   // Not yet configured with Supabase credentials
-  if(!ready && !localStorage.getItem("pl_url")) return <SetupScreen onSetup={handleSetup}/>;
+  if(!ready && !localStorage.getItem("pl_url") && !true) return <SetupScreen onSetup={handleSetup}/>;
   // Credentials exist but not logged in
   if(!session) return <LoginScreen onLogin={handleLogin}/>;
   // Need to setup db first
   if(!ready) return <SetupScreen onSetup={handleSetup}/>;
-  return <App onSignOut={handleSignOut} userEmail={session.email}/>;
+  return <UserContext.Provider value={session.email}><App onSignOut={handleSignOut} userEmail={session.email}/></UserContext.Provider>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
