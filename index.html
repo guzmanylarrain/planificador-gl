@@ -127,14 +127,17 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .act-icon-btn{background:none;border:none;color:#777;padding:4px 5px;border-radius:4px;cursor:pointer;font-size:12px;transition:all 0.13s}
 .act-icon-btn:hover{color:#e0ddd8;background:rgba(255,255,255,0.09)}
 .act-icon-btn.del:hover{color:#e05c5c}
-.tasks-table-head{display:grid;grid-template-columns:44px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
+.tasks-table-head{display:grid;grid-template-columns:44px 60px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
 .th{padding:7px 11px;font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);font-weight:600}
 .task-row-wrap{border-bottom:1px solid var(--line)}.task-row-wrap:last-child{border-bottom:none}
-.task-row{display:grid;grid-template-columns:44px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
+.task-row{display:grid;grid-template-columns:44px 60px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
 .task-row:hover{background:var(--bg)}.task-row.expanded{background:var(--gray-lt)}
 .td{padding:9px 11px;font-size:13px;overflow:hidden}
 .td-num{color:var(--ink3);font-size:11.5px;text-align:center}
 .task-name{font-weight:500;color:var(--ink);line-height:1.3}
+.tipo-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;text-align:center;white-space:nowrap;letter-spacing:0.3px}
+.tipo-T{background:rgba(26,122,74,0.15);color:var(--green)}
+.tipo-R{background:rgba(192,57,43,0.13);color:var(--red)}
 .task-desc-preview{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .prio-badge{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;font-size:10.5px;font-weight:700}
 .prio-1{background:var(--red-lt);color:var(--red)}.prio-2{background:var(--amber-lt);color:var(--amber)}
@@ -326,8 +329,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .th:nth-child(8),.td:nth-child(8){display:none!important}
 
   /* CRITICAL: Override grid for mobile - only num, task name, priority, status */
-  .tasks-table-head{grid-template-columns:36px 1fr 60px 90px!important}
-  .task-row{grid-template-columns:36px 1fr 60px 90px!important}
+  .tasks-table-head{grid-template-columns:36px 52px 1fr 60px 90px!important}
+  .task-row{grid-template-columns:36px 52px 1fr 60px 90px!important}
 
   /* Task name must wrap and be readable */
   .task-name{white-space:normal!important;word-break:break-word;font-size:13px;line-height:1.4}
@@ -818,6 +821,9 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
     <div className="task-row-wrap" ref={rowRef}>
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
         <div className="td td-num">{globalIdx}</div>
+        <div className="td" style={{textAlign:"center"}}>
+          {task.tipo&&<span className={`tipo-badge tipo-${task.tipo}`}>{task.tipo==="T"?"Tarea":"Restricción"}</span>}
+        </div>
         <div className="td">
           <div className="task-name">{task.tarea}</div>
           {lastLog&&<div className="task-desc-preview">{fmtDate(lastLog.date)} — {lastLog.text}</div>}
@@ -879,6 +885,19 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
                 <span style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>📋 Informe Socios</span>
                 <span style={{fontSize:11,color:"var(--ink3)",fontStyle:"italic"}}>— incluir en reporte a socios</span>
               </label>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:10}}>
+                <span style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>Tipo:</span>
+                {["T","R"].map(v=>(
+                  <label key={v} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer"}}>
+                    <input type="radio" name={`tipo-${task.id}`} value={v} checked={form.tipo===v} onChange={()=>set("tipo",v)}/>
+                    <span className={`tipo-badge tipo-${v}`}>{v==="T"?"Tarea":"Restricción"}</span>
+                  </label>
+                ))}
+                <label style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer"}}>
+                  <input type="radio" name={`tipo-${task.id}`} value="" checked={!form.tipo} onChange={()=>set("tipo","")}/>
+                  <span style={{fontSize:12,color:"var(--ink3)"}}>Sin tipo</span>
+                </label>
+              </div>
             </div>
 
           </div>
@@ -967,6 +986,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
         <>
           <div className="tasks-table-head">
             <div className="th" style={{textAlign:"center"}}>#</div>
+            <div className="th" style={{textAlign:"center"}}>Tipo</div>
             <div className="th">Tarea / Restricción</div>
             <div className="th" style={{textAlign:"center"}}>Prior.</div>
             <div className="th">Estado</div>
@@ -1474,6 +1494,7 @@ function InformeView({project}) {
         <div className="inf-task-name">{t.tarea}</div>
         <div className="inf-task-meta">
           {t.responsable&&<span className="inf-task-resp">👤 {t.responsable}</span>}
+          {t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`}>{t.tipo==="T"?"Tarea":"Restricción"}</span>}
           {t.fechaTerminoE&&<span className="inf-task-date">📅 Término E: {fmtDate(t.fechaTerminoE)}</span>}
           {t.fechaTerminoR&&<span className="inf-task-date">✅ {fmtDate(t.fechaTerminoR)}</span>}
           <span className="inf-task-badge" style={{background:"rgba(255,255,255,0.07)",color:"var(--ink3)"}}>P{t.prioridad||"—"}</span>
@@ -1718,7 +1739,7 @@ function DashboardView({projects, onSelectProject}) {
               <span className="dash-overdue-days">{daysDiff(t.fechaTerminoE)}</span>
               <div className="dash-overdue-info">
                 <div className="dash-overdue-task">{t.tarea}</div>
-                <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {t.actName} · {fmtShort(t.fechaTerminoE)}</div>
+                <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {t.actName} · {fmtShort(t.fechaTerminoE)}{t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`} style={{marginLeft:6}}>{t.tipo==="T"?"T":"R"}</span>}</div>
               </div>
             </div>
           ))}
@@ -1738,7 +1759,7 @@ function DashboardView({projects, onSelectProject}) {
                 <span className="dash-upcoming-badge" style={{background:bg,color:col}}>{daysUntil(t.fechaTerminoE)}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
-                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}</div>
+                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}{t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`} style={{marginLeft:6}}>{t.tipo==="T"?"T":"R"}</span>}</div>
                 </div>
               </div>
             );
@@ -1757,7 +1778,7 @@ function DashboardView({projects, onSelectProject}) {
                 <span className="dash-upcoming-badge" style={{background:badge.bg,color:badge.col}}>{badge.label}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
-                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}</div>
+                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}{t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`} style={{marginLeft:6}}>{t.tipo==="T"?"T":"R"}</span>}</div>
                 </div>
               </div>
             );});
@@ -1845,6 +1866,7 @@ function KanbanView({project, onUpdateTask}) {
                 <div className="kanban-card-task">{t.tarea}</div>
                 <div className="kanban-card-act">{t.actName}</div>
                 <div className="kanban-card-footer">
+                  {t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`}>{t.tipo==="T"?"Tarea":"Restricción"}</span>}
                   <span className="kanban-card-prio" style={{background:PRIO_COLORS[t.prioridad]+"22",color:PRIO_COLORS[t.prioridad]}}>P{t.prioridad} {PRIO_LABELS[t.prioridad]}</span>
                   {t.responsable&&<span className="kanban-card-resp">👤 {t.responsable.split(" ")[0]}</span>}
                   {t.fechaTerminoE&&<span className="kanban-card-date">{overdue?"⚠ ":""}{t.fechaTerminoE.slice(5).replace("-","/")}</span>}
@@ -1945,6 +1967,7 @@ function App({onSignOut, userEmail}) {
   const [search,setSearch]=useState("");
   const [filterPrio,setFilterPrio]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
+  const [filterTipo,setFilterTipo]=useState("all");
   const saveTimer=useRef(null);
   const pollTimer=useRef(null);
   const lastServerUpdated=useRef(null);
@@ -2047,10 +2070,11 @@ function App({onSignOut, userEmail}) {
         const mS=actMatch||t.tarea.toLowerCase().includes(q)||(t.responsable||"").toLowerCase().includes(q)||(t.log||[]).some(l=>l.text.toLowerCase().includes(q));
         const mP=filterPrio==="all"||String(t.prioridad)===filterPrio;
         const mSt=filterStatus==="all"||t.estado===filterStatus;
-        return mS&&mP&&mSt;
+        const mTipo=filterTipo==="all"||t.tipo===filterTipo;
+        return mS&&mP&&mSt&&mTipo;
       })
     };
-  }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all")));
+  }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all"||filterTipo!=="all")));
 
   if(loading)return(
     <div className="loading-screen">
@@ -2217,8 +2241,13 @@ function App({onSignOut, userEmail}) {
                         <option value="all">Todos los estados</option>
                         {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
                       </select>
-                      {(search||filterPrio!=="all"||filterStatus!=="all")&&(
-                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio("all");setFilterStatus("all");}}>✕ Limpiar</button>
+                      <select className="filter-select" value={filterTipo} onChange={e=>setFilterTipo(e.target.value)}>
+                        <option value="all">Tareas y Restricciones</option>
+                        <option value="T">Solo Tareas</option>
+                        <option value="R">Solo Restricciones</option>
+                      </select>
+                      {(search||filterPrio!=="all"||filterStatus!=="all"||filterTipo!=="all")&&(
+                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio("all");setFilterStatus("all");setFilterTipo("all");}}>✕ Limpiar</button>
                       )}
                     </div>
                   )}
