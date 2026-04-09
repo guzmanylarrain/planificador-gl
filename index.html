@@ -898,7 +898,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
             <div className="log-entry" key={l.id}>
               <div className="log-date" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 {fmtDate(l.date)}
-                {l.author&&<span style={{fontSize:10,color:"var(--ink2)",fontWeight:600,background:"rgba(255,255,255,0.08)",padding:"1px 6px",borderRadius:4}}>👤 {l.author}</span>}
+                {l.author&&<span style={{fontSize:10,color:"#ffffff",fontWeight:600,background:"rgba(255,255,255,0.08)",padding:"1px 6px",borderRadius:4}}>👤 {l.author}</span>}
               </div>
               {editingLogId===l.id?(
                 <div className="log-editing">
