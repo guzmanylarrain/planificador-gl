@@ -2078,6 +2078,21 @@ function App({onSignOut, userEmail}) {
       </div>
 
       <div className="main">
+        {syncStatus==="error"&&(
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:12,padding:"32px 40px",maxWidth:440,textAlign:"center",boxShadow:"0 8px 40px rgba(0,0,0,0.4)"}}>
+              <div style={{fontSize:40,marginBottom:12}}>⚠️</div>
+              <div style={{fontSize:17,fontWeight:700,color:"var(--ink)",marginBottom:10}}>Sin conexión a la base de datos</div>
+              <div style={{fontSize:13,color:"var(--ink2)",lineHeight:1.6,marginBottom:24}}>
+                Se perdió la conexión con el servidor.<br/>
+                Para reconectarse, cierre sesión y vuelva a ingresar con su cuenta.
+              </div>
+              <button className="btn btn-primary" onClick={onSignOut} style={{width:"100%",padding:"10px 0",fontSize:14}}>
+                Cerrar sesión y reconectar
+              </button>
+            </div>
+          </div>
+        )}
         <div className="global-nav">
           <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
           <button className={"global-nav-btn"+(!showDashboard?" active":"")} onClick={()=>setShowDashboard(false)}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
