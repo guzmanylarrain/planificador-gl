@@ -1961,17 +1961,17 @@ function App({onSignOut, userEmail}) {
         await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
         lastServerUpdated.current=now;
         setProjects(window.INITIAL_DATA);
-        if(window.INITIAL_DATA.length>0&&window.innerWidth>768)setSelId(p=>p||window.INITIAL_DATA[0].id);
+        
       } else {
         const serverTime=rows[0].updated_at;
         const newData=rows[0].data;
         if(!silent){
           setProjects(newData);
-          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
+          
           lastServerUpdated.current=serverTime;
         } else if(!pendingSave.current&&serverTime!==lastServerUpdated.current){
           setProjects(newData);
-          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
+          
           lastServerUpdated.current=serverTime;
         }
       }
