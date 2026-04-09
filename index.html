@@ -1907,6 +1907,14 @@ function App({onSignOut, userEmail}) {
   const loadData=useCallback(async(silent=false)=>{
     if(!db)return;
     if(!silent)setSyncStatus("syncing");
+
+    // Build tipo lookup from embedded INITIAL_DATA
+    const tipoMap={};
+    (window.INITIAL_DATA||[]).forEach(p=>(p.activities||[]).forEach(a=>(a.tasks||[]).forEach(t=>{
+      if(t.tipo) tipoMap[t.id]=t.tipo;
+    })));
+    const mergeTipo=data=>data.map(p=>({...p,activities:(p.activities||[]).map(a=>({...a,tasks:(a.tasks||[]).map(t=>tipoMap[t.id]?{...t,tipo:tipoMap[t.id]}:t)}))}));
+
     try {
       const rows=await db.select("planificador","id=eq.main");
       if(rows.length===0){
@@ -1917,7 +1925,7 @@ function App({onSignOut, userEmail}) {
         if(window.INITIAL_DATA.length>0&&window.innerWidth>768)setSelId(p=>p||window.INITIAL_DATA[0].id);
       } else {
         const serverTime=rows[0].updated_at;
-        const newData=rows[0].data;
+        const newData=mergeTipo(rows[0].data);
         if(!silent){
           setProjects(newData);
           if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
@@ -2038,7 +2046,7 @@ function App({onSignOut, userEmail}) {
         </div>
         <div className="sync-bar">
           <span className={`sync-dot ${syncStatus}`}/>
-          <span className="sync-text">{syncLabel[syncStatus]||"—"} · v9.4</span>
+          <span className="sync-text">{syncLabel[syncStatus]||"—"}</span>
           {lastSync&&<span className="sync-time">{lastSync}</span>}
         </div>
       </div>
