@@ -2355,7 +2355,10 @@ function Root() {
   // Not yet configured with Supabase credentials
   if(!ready && !localStorage.getItem("pl_url") && !true) return <SetupScreen onSetup={handleSetup}/>;
   // Credentials exist but not logged in
-  if(!session) return <LoginScreen onLogin={handleLogin}/>;
+  // Bypass login for local testing
+  const isLocal = window.location.protocol === "file:";
+  if(!session && isLocal) return <UserContext.Provider value="local@test.com"><App onSignOut={()=>{}} userEmail="local@test.com"/></UserContext.Provider>;
+  if(!session) return <LoginScreen onLogin={handleLogin}/>
   // Need to setup db first
   if(!ready) return <SetupScreen onSetup={handleSetup}/>;
   return <UserContext.Provider value={session.email}><App onSignOut={handleSignOut} userEmail={session.email}/></UserContext.Provider>;
