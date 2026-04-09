@@ -1928,7 +1928,16 @@ function App({onSignOut, userEmail}) {
     (window.INITIAL_DATA||[]).forEach(p=>(p.activities||[]).forEach(a=>(a.tasks||[]).forEach(t=>{
       if(t.tipo) tipoMap[t.id]=t.tipo;
     })));
-    const mergeTipo=data=>data.map(p=>({...p,activities:(p.activities||[]).map(a=>({...a,tasks:(a.tasks||[]).map(t=>tipoMap[t.id]?{...t,tipo:tipoMap[t.id]}:t)}))}));
+    const mergeTipo=data=>data.map(p=>({...p,activities:(p.activities||[]).map(a=>{
+      // Deduplicate tasks by (tarea, fechaInicioE, fechaTerminoE)
+      const seen={};
+      const cleanTasks=(a.tasks||[]).filter(t=>{
+        const k=`${t.tarea||""}|${t.fechaInicioE||""}|${t.fechaTerminoE||""}`;
+        if(seen[k])return false;
+        seen[k]=true;return true;
+      });
+      return {...a,tasks:cleanTasks.map(t=>tipoMap[t.id]?{...t,tipo:tipoMap[t.id]}:t)};
+    })}));
 
     try {
       const rows=await db.select("planificador","id=eq.main");
@@ -2298,7 +2307,7 @@ function LoginScreen({onLogin}) {
       const client = new SupabaseClient(u, k);
       const session = await client.signIn(email.trim().toLowerCase(), password);
       const token = session.access_token;
-      const userData = { email: session.user?.email, token, expires: session.expires_at };
+      const userData = { email: session.user?.email || email.trim().toLowerCase(), token, expires: session.expires_at };
       sessionStorage.setItem("gl_session", JSON.stringify(userData));
       onLogin(userData);
     } catch(e) {
