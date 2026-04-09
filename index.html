@@ -798,7 +798,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
   const userEmail=React.useContext(UserContext);
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const saveAndClose=()=>{onUpdate(actId,{...form});setOpen(false);};
-  const addLog=()=>{\
+  const addLog=()=>{
     if(!newLogText.trim())return;
     const author=emailToName(userEmail)||"";
     setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim(),author}]}));
