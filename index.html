@@ -925,7 +925,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask,onReorderTasks}) {
   const hasJump = jumpToTask && jumpToTask.actId === activity.id;
   const [collapsed,setCollapsed]=useState(!hasJump);
   useEffect(()=>{if(hasJump)setCollapsed(false);},[hasJump]);
@@ -933,6 +933,31 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
   const [nameVal,setNameVal]=useState(activity.name);
+  const [manualOrder,setManualOrder]=useState(false);
+  const [dragIdx,setDragIdx]=useState(null);
+  const [dragOverIdx,setDragOverIdx]=useState(null);
+
+  // Default sort: T first (by fechaInicioE), then R (by fechaInicioE)
+  const sortedTasks = manualOrder ? activity.tasks : [...activity.tasks].sort((a,b)=>{
+    const ta = a.tipo==="R"?1:0, tb = b.tipo==="R"?1:0;
+    if(ta!==tb) return ta-tb;
+    const da=a.fechaInicioE||"9999", db=b.fechaInicioE||"9999";
+    return da.localeCompare(db);
+  });
+
+  const handleDragStart=(i)=>setDragIdx(i);
+  const handleDragOver=(e,i)=>{e.preventDefault();setDragOverIdx(i);};
+  const handleDrop=(i)=>{
+    if(dragIdx===null||dragIdx===i){setDragIdx(null);setDragOverIdx(null);return;}
+    const reordered=[...activity.tasks];
+    // We drag from sortedTasks indices, map back to actual task objects
+    const dragged=sortedTasks[dragIdx];
+    const newList=sortedTasks.filter((_,idx)=>idx!==dragIdx);
+    newList.splice(i,0,dragged);
+    onReorderTasks(activity.id,newList);
+    setDragIdx(null);setDragOverIdx(null);
+  };
+
   const confirmAdd=()=>{
     if(!newTaskName.trim())return setAddingTask(false);
     onAddTask(activity.id,newTaskName.trim());
@@ -951,6 +976,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
         ):<h3>{activity.name}</h3>}
         <span className="activity-count">{activity.tasks.length} tarea{activity.tasks.length!==1?"s":""}</span>
         <div className="act-actions" onClick={e=>e.stopPropagation()}>
+          <button className="act-icon-btn" title={manualOrder?"Orden automático":"Reordenar"} onClick={()=>setManualOrder(m=>!m)} style={manualOrder?{color:"var(--teal)"}:{}}>⇅</button>
           <button className="act-icon-btn" onClick={()=>{setEditingName(true);setCollapsed(false);}}>✏️</button>
           <button className="act-icon-btn" onClick={()=>{setAddingTask(true);setCollapsed(false);}}>+</button>
           <button className="act-icon-btn del" onClick={()=>{if(confirm(`¿Eliminar "${activity.name}"?`))onDeleteAct(activity.id);}}>🗑</button>
@@ -970,8 +996,17 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
             <div className="th" style={{textAlign:"center"}}>IS</div>
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
-          {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
+          {sortedTasks.map((task,i)=>(
+            <div key={task.id}
+              draggable={manualOrder}
+              onDragStart={()=>handleDragStart(i)}
+              onDragOver={e=>handleDragOver(e,i)}
+              onDrop={()=>handleDrop(i)}
+              onDragEnd={()=>{setDragIdx(null);setDragOverIdx(null);}}
+              style={{opacity:dragIdx===i?0.4:1,borderTop:dragOverIdx===i&&dragIdx!==i?"2px solid var(--teal)":"2px solid transparent",transition:"border 0.1s"}}>
+              {manualOrder&&<div style={{display:"flex",alignItems:"center",paddingLeft:8,cursor:"grab",color:"var(--ink3)",fontSize:12,userSelect:"none"}}>⠿</div>}
+              <TaskRow task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
+            </div>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -1989,6 +2024,7 @@ function App({onSignOut, userEmail}) {
   };
   const renameAct=(aid,name)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,name}:a));
   const deleteAct=(aid)=>updActs(selId,acts=>acts.filter(a=>a.id!==aid));
+  const reorderTasks=(aid,newTasks)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:newTasks}:a));
   const addTask=(aid,tarea)=>{
     const task={id:uid(),tarea,prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[]};
     updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:[task,...a.tasks]}:a));
@@ -2186,7 +2222,7 @@ function App({onSignOut, userEmail}) {
                     </div>
                   )}
                   {filteredActs.map((a,ai)=>(
-                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} jumpToTask={jumpToTask}/>
+                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} jumpToTask={jumpToTask} onReorderTasks={reorderTasks}/>
                   ))}
                 </>
               )}
