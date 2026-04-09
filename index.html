@@ -129,7 +129,7 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .tasks-table-head{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
 .th{padding:7px 11px;font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);font-weight:600}
 .task-row-wrap{border-bottom:1px solid var(--line)}.task-row-wrap:last-child{border-bottom:none}
-.task-row{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
+.task-row{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s;min-height:48px}
 .task-row:hover{background:var(--bg)}.task-row.expanded{background:var(--gray-lt)}
 .td{padding:9px 11px;font-size:13px;overflow:hidden}
 .td-num{color:var(--ink3);font-size:11.5px;text-align:center}
@@ -838,6 +838,14 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
               <input className="detail-input" value={form.tarea} onChange={e=>set("tarea",e.target.value)}/>
             </div>
             <div className="detail-field">
+              <div className="detail-label">Tipo</div>
+              <select className="detail-input" value={form.tipo||""} onChange={e=>set("tipo",e.target.value)}>
+                <option value="">— Sin clasificar —</option>
+                <option value="T">Tarea</option>
+                <option value="R">Restricción</option>
+              </select>
+            </div>
+            <div className="detail-field">
               <div className="detail-label">Responsable</div>
               <select className="detail-input" value={form.responsable||""} onChange={e=>set("responsable",e.target.value)}>
                 <option value="">— Sin asignar —</option>
@@ -888,7 +896,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
           {form.log.length===0&&<p style={{fontSize:12,color:"var(--ink3)",marginBottom:10}}>Sin entradas aún.</p>}
           {[...form.log].reverse().map(l=>(
             <div className="log-entry" key={l.id}>
-              <div className="log-date">{fmtDate(l.date)}</div>
+              <div className="log-date">{fmtDate(l.date)}{l.author&&<span style={{marginLeft:8,fontSize:10,color:"var(--teal)",fontWeight:600}}>👤 {l.author}</span>}</div>
               {editingLogId===l.id?(
                 <div className="log-editing">
                   <textarea className="log-edit-inp" value={editLogText} onChange={e=>setEditLogText(e.target.value)} autoFocus onKeyDown={e=>{if(e.key==="Escape")cancelEditLog();if(e.key==="Enter"&&e.ctrlKey){setForm(f=>({...f,log:f.log.map(ll=>ll.id===l.id?{...ll,text:editLogText}:ll)}));setEditingLogId(null);}}}/>
@@ -925,7 +933,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask,onReorderTasks}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask}) {
   const hasJump = jumpToTask && jumpToTask.actId === activity.id;
   const [collapsed,setCollapsed]=useState(!hasJump);
   useEffect(()=>{if(hasJump)setCollapsed(false);},[hasJump]);
@@ -933,30 +941,13 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
   const [nameVal,setNameVal]=useState(activity.name);
-  const [manualOrder,setManualOrder]=useState(false);
-  const [dragIdx,setDragIdx]=useState(null);
-  const [dragOverIdx,setDragOverIdx]=useState(null);
 
-  // Default sort: T first (by fechaInicioE), then R (by fechaInicioE)
-  const sortedTasks = manualOrder ? activity.tasks : [...activity.tasks].sort((a,b)=>{
-    const ta = a.tipo==="R"?1:0, tb = b.tipo==="R"?1:0;
+  // Default sort: T first (by fechaInicioE asc), then R (by fechaInicioE asc)
+  const sortedTasks=[...activity.tasks].sort((a,b)=>{
+    const ta=a.tipo==="R"?1:0, tb=b.tipo==="R"?1:0;
     if(ta!==tb) return ta-tb;
-    const da=a.fechaInicioE||"9999", db=b.fechaInicioE||"9999";
-    return da.localeCompare(db);
+    return (a.fechaInicioE||"9999").localeCompare(b.fechaInicioE||"9999");
   });
-
-  const handleDragStart=(i)=>setDragIdx(i);
-  const handleDragOver=(e,i)=>{e.preventDefault();setDragOverIdx(i);};
-  const handleDrop=(i)=>{
-    if(dragIdx===null||dragIdx===i){setDragIdx(null);setDragOverIdx(null);return;}
-    const reordered=[...activity.tasks];
-    // We drag from sortedTasks indices, map back to actual task objects
-    const dragged=sortedTasks[dragIdx];
-    const newList=sortedTasks.filter((_,idx)=>idx!==dragIdx);
-    newList.splice(i,0,dragged);
-    onReorderTasks(activity.id,newList);
-    setDragIdx(null);setDragOverIdx(null);
-  };
 
   const confirmAdd=()=>{
     if(!newTaskName.trim())return setAddingTask(false);
@@ -976,7 +967,6 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
         ):<h3>{activity.name}</h3>}
         <span className="activity-count">{activity.tasks.length} tarea{activity.tasks.length!==1?"s":""}</span>
         <div className="act-actions" onClick={e=>e.stopPropagation()}>
-          <button className="act-icon-btn" title={manualOrder?"Orden automático":"Reordenar"} onClick={()=>setManualOrder(m=>!m)} style={manualOrder?{color:"var(--teal)"}:{}}>⇅</button>
           <button className="act-icon-btn" onClick={()=>{setEditingName(true);setCollapsed(false);}}>✏️</button>
           <button className="act-icon-btn" onClick={()=>{setAddingTask(true);setCollapsed(false);}}>+</button>
           <button className="act-icon-btn del" onClick={()=>{if(confirm(`¿Eliminar "${activity.name}"?`))onDeleteAct(activity.id);}}>🗑</button>
@@ -997,16 +987,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
           {sortedTasks.map((task,i)=>(
-            <div key={task.id}
-              draggable={manualOrder}
-              onDragStart={()=>handleDragStart(i)}
-              onDragOver={e=>handleDragOver(e,i)}
-              onDrop={()=>handleDrop(i)}
-              onDragEnd={()=>{setDragIdx(null);setDragOverIdx(null);}}
-              style={{opacity:dragIdx===i?0.4:1,borderTop:dragOverIdx===i&&dragIdx!==i?"2px solid var(--teal)":"2px solid transparent",transition:"border 0.1s"}}>
-              {manualOrder&&<div style={{display:"flex",alignItems:"center",paddingLeft:8,cursor:"grab",color:"var(--ink3)",fontSize:12,userSelect:"none"}}>⠿</div>}
-              <TaskRow task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
-            </div>
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -1957,17 +1938,14 @@ function App({onSignOut, userEmail}) {
         await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
         lastServerUpdated.current=now;
         setProjects(window.INITIAL_DATA);
-        if(window.INITIAL_DATA.length>0&&window.innerWidth>768)setSelId(p=>p||window.INITIAL_DATA[0].id);
       } else {
         const serverTime=rows[0].updated_at;
         const newData=mergeTipo(rows[0].data);
         if(!silent){
           setProjects(newData);
-          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         } else if(!pendingSave.current&&serverTime!==lastServerUpdated.current){
           setProjects(newData);
-          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         }
       }
