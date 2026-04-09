@@ -896,7 +896,10 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
           {form.log.length===0&&<p style={{fontSize:12,color:"var(--ink3)",marginBottom:10}}>Sin entradas aún.</p>}
           {[...form.log].reverse().map(l=>(
             <div className="log-entry" key={l.id}>
-              <div className="log-date">{fmtDate(l.date)}{l.author&&<span style={{marginLeft:8,fontSize:10,color:"var(--teal)",fontWeight:600}}>👤 {l.author}</span>}</div>
+              <div className="log-date" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                {fmtDate(l.date)}
+                {l.author&&<span style={{fontSize:10,color:"var(--ink2)",fontWeight:600,background:"rgba(255,255,255,0.08)",padding:"1px 6px",borderRadius:4}}>👤 {l.author}</span>}
+              </div>
               {editingLogId===l.id?(
                 <div className="log-editing">
                   <textarea className="log-edit-inp" value={editLogText} onChange={e=>setEditLogText(e.target.value)} autoFocus onKeyDown={e=>{if(e.key==="Escape")cancelEditLog();if(e.key==="Enter"&&e.ctrlKey){setForm(f=>({...f,log:f.log.map(ll=>ll.id===l.id?{...ll,text:editLogText}:ll)}));setEditingLogId(null);}}}/>
