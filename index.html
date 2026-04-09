@@ -2277,9 +2277,8 @@ function LoginScreen({onLogin}) {
   useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
 
   const handleLogin = async () => {
-    const u = localStorage.getItem("pl_url");
-    const k = localStorage.getItem("pl_key");
-    if(!u||!k) { setError("Primero configura las credenciales de Supabase."); return; }
+    const u = localStorage.getItem("pl_url") || "https://jjphjrnvdjpchcekmqad.supabase.co";
+    const k = localStorage.getItem("pl_key") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
     if(!email.trim()||!password) { setError("Ingresa tu email y contraseña."); return; }
     setLoading(true); setError("");
     try {
