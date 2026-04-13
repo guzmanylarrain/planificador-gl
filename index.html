@@ -52,6 +52,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .proj-count{font-size:10px;color:rgba(255,255,255,0.25);flex-shrink:0}
 .proj-item:hover .proj-del-btn{color:#e05c5c !important}
 .proj-del-btn:hover{background:rgba(224,92,92,0.15) !important;color:#e05c5c !important}
+.proj-item:hover .proj-arch-btn{color:#d4a843 !important}
+.proj-arch-btn:hover{background:rgba(212,168,67,0.15) !important;color:#d4a843 !important}
 
 .sidebar-bottom{padding:6px 8px 14px;display:flex;flex-direction:column;gap:5px}
 .sidebar-btn{width:100%;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:500;transition:all 0.15s;text-align:left;border:none}
@@ -652,8 +654,8 @@ function SetupScreen({onSetup}) {
     try {
       const client=new SupabaseClient(u,k);
       await client.test();
-      localStorage.setItem("sb_url",u);
-      localStorage.setItem("sb_key",k);
+      localStorage.setItem("pl_url",u);
+      localStorage.setItem("pl_key",k);
       onSetup(u,k);
     } catch(e){setError("⚠️ "+e.message);}
     setTesting(false);
@@ -687,13 +689,16 @@ function SetupScreen({onSetup}) {
 }
 
 // ── CITY SIDEBAR ────────────────────────────────────────────────────────────
-function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
-  const firstCity = projects.length > 0 ? getCity(projects[0].name) : null;
+function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProject}) {
+  const activeProjects = projects.filter(p => !p.archived);
+  const archivedProjects = projects.filter(p => p.archived);
+  const firstCity = activeProjects.length > 0 ? getCity(activeProjects[0].name) : null;
   const [openCities, setOpenCities] = useState(() => {
     const init = {};
     if(firstCity) init[firstCity] = true;
     return init;
   });
+  const [showArchived, setShowArchived] = useState(false);
 
   // Auto-open city of selected project
   useEffect(() => {
@@ -704,16 +709,32 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
     setOpenCities(prev => ({...prev, [city]: true}));
   }, [selId]);
 
-  // Group by city, preserve order
+  // Group by city, preserve order (active only)
   const cityMap = {};
   const cityOrder = [];
-  for(const p of projects) {
+  for(const p of activeProjects) {
     const city = getCity(p.name);
     if(!cityMap[city]) { cityMap[city] = []; cityOrder.push(city); }
     cityMap[city].push(p);
   }
 
   const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
+
+  const renderProjItem = (p, isArchived) => (
+    <div key={p.id} className={`proj-item${selId===p.id?" active":""}`}
+      style={isArchived?{opacity:0.5}:{}}
+      onClick={() => onSelect(p.id)}>
+      <span className="proj-dot" style={{background:p.color}}/>
+      <span className="proj-name">{getShortName(p.name)}</span>
+      <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+      <button onClick={e=>{e.stopPropagation();onArchiveProject(p.id);}}
+        style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:10,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+        className="proj-arch-btn" title={isArchived?"Desarchivar":"Archivar proyecto"}>📦</button>
+      <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
+        style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+        className="proj-del-btn">🗑</button>
+    </div>
+  );
 
   return (
     <div className="proj-list">
@@ -730,21 +751,26 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
             </div>
             {isOpen && (
               <div className="city-projects">
-                {projs.map(p => (
-                  <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
-                    <span className="proj-dot" style={{background:p.color}}/>
-                    <span className="proj-name">{getShortName(p.name)}</span>
-                    <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
-                    <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
-                      style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
-                      className="proj-del-btn">🗑</button>
-                  </div>
-                ))}
+                {projs.map(p => renderProjItem(p, false))}
               </div>
             )}
           </div>
         );
       })}
+      {archivedProjects.length > 0 && (
+        <div style={{marginTop:6,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:4}}>
+          <button onClick={()=>setShowArchived(s=>!s)}
+            style={{width:"100%",padding:"6px 8px",background:"none",border:"none",color:"#5a5750",fontSize:9,textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:6,textTransform:"uppercase",letterSpacing:1.5}}>
+            <span style={{transition:"transform 0.2s",display:"inline-block",transform:showArchived?"rotate(90deg)":"rotate(0deg)"}}>▶</span>
+            Archivados ({archivedProjects.length})
+          </button>
+          {showArchived && (
+            <div style={{paddingLeft:8,borderLeft:"1px solid rgba(255,255,255,0.06)",marginLeft:10}}>
+              {archivedProjects.map(p => renderProjItem(p, true))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1420,24 +1446,34 @@ function DonutChart({data}) {
 
 function InformeView({project}) {
   const [soloIS, setSoloIS] = useState(false);
+  const [filterResp, setFilterResp] = useState("all");
+  const [filterPrio, setFilterPrio] = useState("all");
   const today=new Date().toISOString().slice(0,10);
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
 
-  const allTasks=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
-  const filt=t=>!soloIS||t.informeSocio;
+  const allTasksRaw=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
+  const allResponsables=[...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
 
-  const atrasadas=allTasks.filter(t=>filt(t)&&t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
+  const filt=t=>{
+    if(soloIS&&!t.informeSocio)return false;
+    if(filterResp!=="all"&&t.responsable!==filterResp)return false;
+    if(filterPrio!=="all"&&String(t.prioridad)!==filterPrio)return false;
+    return true;
+  };
+  const allTasks=allTasksRaw.filter(filt);
+
+  const atrasadas=allTasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)
     .sort((a,b)=>a.fechaTerminoE.localeCompare(b.fechaTerminoE));
-  const enCurso=allTasks.filter(t=>filt(t)&&t.estado==="En Proceso")
+  const enCurso=allTasks.filter(t=>t.estado==="En Proceso")
     .sort((a,b)=>(a.fechaTerminoE||"").localeCompare(b.fechaTerminoE||""));
-  const pendientes=allTasks.filter(t=>filt(t)&&t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
+  const pendientes=allTasks.filter(t=>t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
     .sort((a,b)=>(a.fechaTerminoE||"zzz").localeCompare(b.fechaTerminoE||"zzz"));
-  const recientes=allTasks.filter(t=>filt(t)&&t.estado==="Completado"&&t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)
+  const recientes=allTasks.filter(t=>t.estado==="Completado"&&t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)
     .sort((a,b)=>b.fechaTerminoR.localeCompare(a.fechaTerminoR));
 
-  const done=allTasks.filter(t=>t.estado==="Completado").length;
-  const total=allTasks.length;
+  const done=allTasksRaw.filter(t=>t.estado==="Completado").length;
+  const total=allTasksRaw.length;
   const pct=total>0?Math.round(done/total*100):0;
   const pctColor=pct===100?"var(--green)":pct>=50?project.color:"var(--amber)";
 
@@ -1493,9 +1529,25 @@ function InformeView({project}) {
             <div className="inf-title">{projShortName}</div>
             <div className="inf-subtitle">{dateStr} · {project.name.split(" - ")[0]}</div>
           </div>
-          <div className="inf-controls">
+          <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            {allResponsables.length>1&&(
+              <select value={filterResp} onChange={e=>setFilterResp(e.target.value)}
+                style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:5,padding:"5px 8px",fontSize:11,color:"var(--ink2)",outline:"none",cursor:"pointer"}}>
+                <option value="all">Todos los responsables</option>
+                {allResponsables.map(r=><option key={r} value={r}>{r}</option>)}
+              </select>
+            )}
+            <select value={filterPrio} onChange={e=>setFilterPrio(e.target.value)}
+              style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:5,padding:"5px 8px",fontSize:11,color:"var(--ink2)",outline:"none",cursor:"pointer"}}>
+              <option value="all">Todas las prioridades</option>
+              <option value="1">1 — Alta</option><option value="2">2 — Media</option>
+              <option value="3">3 — Normal</option><option value="4">4 — Baja</option>
+            </select>
+            {(filterResp!=="all"||filterPrio!=="all")&&(
+              <button className="btn btn-ghost btn-xs" onClick={()=>{setFilterResp("all");setFilterPrio("all");}}>✕</button>
+            )}
             <button className={"inf-toggle"+(soloIS?" on":"")} onClick={()=>setSoloIS(s=>!s)}>
-              📋 {soloIS?"Solo Informe Socios":"Todo el equipo"}
+              📋 {soloIS?"Solo IS":"Todo el equipo"}
             </button>
           </div>
         </div>
@@ -1532,7 +1584,7 @@ function InformeView({project}) {
 
       {[atrasadas,enCurso,pendientes,recientes].every(s=>s.length===0)&&(
         <div className="inf-empty">
-          {soloIS?"No hay tareas marcadas como Informe Socios en este proyecto.":"No hay tareas para mostrar en este período."}
+          {(soloIS||filterResp!=="all"||filterPrio!=="all")?"No hay tareas que cumplan los filtros aplicados.":"No hay tareas para mostrar en este período."}
         </div>
       )}
     </div>
@@ -2011,6 +2063,10 @@ function App({onSignOut, userEmail}) {
     updateProjects(remaining);
     if(selId===pid)setSelId(remaining.length>0?remaining[0].id:null);
   };
+  const archiveProject=(pid)=>{
+    updateProjects(projects.map(p=>p.id===pid?{...p,archived:!p.archived}:p));
+    // If selected project gets archived, stay on it (it's still accessible)
+  };
   const renameAct=(aid,name)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,name}:a));
   const deleteAct=(aid)=>updActs(selId,acts=>acts.filter(a=>a.id!==aid));
   const addTask=(aid,tarea)=>{
@@ -2061,10 +2117,10 @@ function App({onSignOut, userEmail}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject}/>
+        <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
-          <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects)}>⬇ Exportar CSV</button>
+          <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects.filter(p=>!p.archived))}>⬇ Exportar CSV</button>
           <div style={{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:8,paddingTop:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
             <span style={{fontSize:10,color:"#5a5750",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}} title={userEmail}>👤 {userEmail}</span>
             <button className="signout-btn" onClick={onSignOut} title="Cerrar sesión">Salir</button>
@@ -2109,7 +2165,7 @@ function App({onSignOut, userEmail}) {
                 );
               })()}
             </div>
-            <button className="btn btn-outline btn-sm" onClick={()=>exportPDF(projects)} title="Exportar reporte PDF">📄 PDF</button>
+            <button className="btn btn-outline btn-sm" onClick={()=>exportPDF(projects.filter(p=>!p.archived))} title="Exportar reporte PDF">📄 PDF</button>
             <div className="audit-bell-wrap" ref={auditRef}>
               <button className="audit-bell-btn" onClick={()=>{setShowAudit(s=>!s);setAuditUnread(0);}} title="Historial de cambios">
                 🔔
@@ -2188,11 +2244,11 @@ function App({onSignOut, userEmail}) {
         </div>
         <div className="content" style={showDashboard?{padding:0}:{}}>
           {showDashboard?(
-            <DashboardView projects={projects} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}}/>
+            <DashboardView projects={projects.filter(p=>!p.archived)} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
-                <MobileProjectList projects={projects} onSelect={id=>{setSelId(id);setActiveTab("actividades");}}/>
+                <MobileProjectList projects={projects.filter(p=>!p.archived)} onSelect={id=>{setSelId(id);setActiveTab("actividades");}}/>
               </div>
             </>
           ):!selProj?(
@@ -2307,8 +2363,8 @@ function LoginScreen({onLogin}) {
   useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
 
   const handleLogin = async () => {
-    const u = localStorage.getItem("sb_url");
-    const k = localStorage.getItem("sb_key");
+    const u = localStorage.getItem("pl_url");
+    const k = localStorage.getItem("pl_key");
     if(!u||!k) { setError("Primero configura las credenciales de Supabase."); return; }
     if(!email.trim()||!password) { setError("Ingresa tu email y contraseña."); return; }
     setLoading(true); setError("");
@@ -2367,8 +2423,8 @@ function Root() {
   const [ready, setReady] = useState(false);
 
   useEffect(()=>{
-    const u=localStorage.getItem("sb_url");
-    const k=localStorage.getItem("sb_key");
+    const u=localStorage.getItem("pl_url");
+    const k=localStorage.getItem("pl_key");
     if(u&&k){
       db=new SupabaseClient(u,k);
       // If we have a session token, use it for authenticated requests
@@ -2391,7 +2447,7 @@ function Root() {
   };
 
   // Not yet configured with Supabase credentials
-  if(!ready && !localStorage.getItem("sb_url")) return <SetupScreen onSetup={handleSetup}/>;
+  if(!ready && !localStorage.getItem("pl_url")) return <SetupScreen onSetup={handleSetup}/>;
   // Credentials exist but not logged in
   if(!session) return <LoginScreen onLogin={handleLogin}/>;
   // Need to setup db first
