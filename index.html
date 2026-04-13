@@ -1957,6 +1957,8 @@ function App({onSignOut, userEmail}) {
   const lastServerUpdated=useRef(null);
   const pendingSave=useRef(false);
   const auditRef=useRef(null);
+  const errorCount=useRef(0);
+  const [fatalConnError,setFatalConnError]=useState(false);
 
   const loadData=useCallback(async(silent=false)=>{
     if(!db)return;
@@ -1968,23 +1970,26 @@ function App({onSignOut, userEmail}) {
         await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
         lastServerUpdated.current=now;
         setProjects(window.INITIAL_DATA);
-        if(window.INITIAL_DATA.length>0&&window.innerWidth>768)setSelId(p=>p||window.INITIAL_DATA[0].id);
       } else {
         const serverTime=rows[0].updated_at;
         const newData=rows[0].data;
         if(!silent){
           setProjects(newData);
-          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         } else if(!pendingSave.current&&serverTime!==lastServerUpdated.current){
           setProjects(newData);
-          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         }
       }
+      errorCount.current=0;
       setSyncStatus("connected");
       setLastSync(new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}));
-    } catch(e){console.error(e);if(!silent)setSyncStatus("error");}
+    } catch(e){
+      console.error(e);
+      if(!silent)setSyncStatus("error");
+      errorCount.current++;
+      if(errorCount.current>=3)setFatalConnError(true);
+    }
     setLoading(false);
   },[]);
 
@@ -2008,7 +2013,7 @@ function App({onSignOut, userEmail}) {
         pendingSave.current=false;
         setSyncStatus("connected");
         setLastSync(new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}));
-      } catch(e){console.error(e);pendingSave.current=false;setSyncStatus("error");}
+      } catch(e){console.error(e);pendingSave.current=false;setSyncStatus("error");errorCount.current++;if(errorCount.current>=3)setFatalConnError(true);}
     },1500);
   },[]);
 
@@ -2065,7 +2070,11 @@ function App({onSignOut, userEmail}) {
   };
   const archiveProject=(pid)=>{
     updateProjects(projects.map(p=>p.id===pid?{...p,archived:!p.archived}:p));
-    // If selected project gets archived, stay on it (it's still accessible)
+    // If the selected project is being archived, deselect it
+    if(selId===pid){
+      const p=projects.find(x=>x.id===pid);
+      if(p&&!p.archived)setSelId(null); // it's currently active (about to be archived)
+    }
   };
   const renameAct=(aid,name)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,name}:a));
   const deleteAct=(aid)=>updActs(selId,acts=>acts.filter(a=>a.id!==aid));
@@ -2082,7 +2091,7 @@ function App({onSignOut, userEmail}) {
   };
   const deleteTask=(aid,tid)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.filter(t=>t.id!==tid)}:a));
 
-  const selProj=projects.find(p=>p.id===selId);
+  const selProj=projects.find(p=>p.id===selId&&!p.archived);
   const allTasks=(selProj?.activities||[]).flatMap(a=>a.tasks);
   const stats=allTasks.reduce((acc,t)=>{acc[t.estado]=(acc[t.estado]||0)+1;return acc;},{});
 
@@ -2099,6 +2108,19 @@ function App({onSignOut, userEmail}) {
       })
     };
   }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all")));
+
+  if(fatalConnError)return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",gap:16,padding:24,textAlign:"center"}}>
+      <div style={{fontSize:40}}>🔌</div>
+      <div style={{fontSize:20,fontWeight:700,color:"var(--red)"}}>Error de conexión</div>
+      <div style={{color:"var(--ink2)",maxWidth:360}}>No se pudo conectar a la base de datos después de varios intentos. Por favor, desconéctate y vuelve a conectarte.</div>
+      <button className="btn btn-primary" onClick={()=>{
+        localStorage.removeItem("pl_url");
+        localStorage.removeItem("pl_key");
+        window.location.reload();
+      }}>Desconectar y reconectar</button>
+    </div>
+  );
 
   if(loading)return(
     <div className="loading-screen">
