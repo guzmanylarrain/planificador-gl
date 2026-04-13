@@ -41,14 +41,6 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .city-arrow.open{transform:rotate(90deg)}
 .city-name{flex:1;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:#7a7770}
 .city-count{font-size:10px;color:#4a4740;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:8px}
-.subgroup{margin-bottom:2px}
-.subgroup-header{display:flex;align-items:center;gap:6px;padding:5px 8px 5px 20px;border-radius:5px;cursor:pointer;transition:all 0.14s;user-select:none;font-size:11px;color:#6a6760}
-.subgroup-header:hover{background:rgba(255,255,255,0.03);color:#908d86}
-.subgroup-arrow{font-size:7px;color:#4a4740;transition:transform 0.2s;display:inline-block}
-.subgroup-arrow.open{transform:rotate(90deg)}
-.subgroup-name{flex:1}
-.subgroup-count{font-size:10px;color:#4a4740;background:rgba(255,255,255,0.04);padding:1px 5px;border-radius:8px}
-.subgroup-projects .proj-item{padding-left:28px}
 .city-projects{padding-left:8px;border-left:1px solid rgba(255,255,255,0.06);margin-left:10px}
 
 /* Proyecto item */
@@ -126,17 +118,14 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .act-icon-btn{background:none;border:none;color:#777;padding:4px 5px;border-radius:4px;cursor:pointer;font-size:12px;transition:all 0.13s}
 .act-icon-btn:hover{color:#e0ddd8;background:rgba(255,255,255,0.09)}
 .act-icon-btn.del:hover{color:#e05c5c}
-.tasks-table-head{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
+.tasks-table-head{display:grid;grid-template-columns:44px 1fr 86px 96px 96px 96px 96px;background:var(--bg);border-bottom:1px solid var(--line)}
 .th{padding:7px 11px;font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink3);font-weight:600}
 .task-row-wrap{border-bottom:1px solid var(--line)}.task-row-wrap:last-child{border-bottom:none}
-.task-row{display:grid;grid-template-columns:44px 28px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s;min-height:48px}
+.task-row{display:grid;grid-template-columns:44px 1fr 86px 96px 96px 96px 96px;align-items:center;cursor:pointer;transition:background 0.13s}
 .task-row:hover{background:var(--bg)}.task-row.expanded{background:var(--gray-lt)}
 .td{padding:9px 11px;font-size:13px;overflow:hidden}
 .td-num{color:var(--ink3);font-size:11.5px;text-align:center}
 .task-name{font-weight:500;color:var(--ink);line-height:1.3}
-.tipo-badge{font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-.tipo-T{background:rgba(26,122,74,0.18);color:var(--green)}
-.tipo-R{background:rgba(192,57,43,0.15);color:var(--red)}
 .task-desc-preview{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .prio-badge{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;font-size:10.5px;font-weight:700}
 .prio-1{background:var(--red-lt);color:var(--red)}.prio-2{background:var(--amber-lt);color:var(--amber)}
@@ -326,8 +315,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .th:nth-child(8),.td:nth-child(8){display:none!important}
 
   /* CRITICAL: Override grid for mobile - only num, task name, priority, status */
-  .tasks-table-head{grid-template-columns:36px 24px 1fr 60px 90px!important}
-  .task-row{grid-template-columns:36px 24px 1fr 60px 90px!important}
+  .tasks-table-head{grid-template-columns:36px 1fr 60px 90px!important}
+  .task-row{grid-template-columns:36px 1fr 60px 90px!important}
 
   /* Task name must wrap and be readable */
   .task-name{white-space:normal!important;word-break:break-word;font-size:13px;line-height:1.4}
@@ -378,6 +367,27 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .global-result-task{font-size:13px;color:var(--ink);font-weight:600;margin:2px 0}
 .global-result-act{font-size:11px;color:var(--ink3)}
 .global-result-status{font-size:11px;font-weight:600;padding:1px 7px;border-radius:10px;display:inline-block;margin-top:3px}
+
+/* ── AUDIT BELL ─────────────────────────────────────────────────────────── */
+.audit-bell-wrap{position:relative;display:flex;align-items:center}
+.audit-bell-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;transition:background 0.15s;position:relative;line-height:1}
+.audit-bell-btn:hover{background:var(--bg2)}
+.audit-badge{position:absolute;top:0;right:2px;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 4px;min-width:14px;text-align:center;line-height:14px}
+.audit-panel{position:absolute;top:calc(100% + 8px);right:0;width:380px;background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);z-index:300;max-height:480px;overflow:hidden;display:flex;flex-direction:column}
+.audit-panel-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.audit-panel-head h4{font-size:13px;font-weight:700;color:var(--ink)}
+.audit-list{overflow-y:auto;flex:1}
+.audit-list::-webkit-scrollbar{width:4px}
+.audit-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.audit-entry{padding:10px 16px;border-bottom:1px solid var(--line);transition:background 0.1s}
+.audit-entry:last-child{border-bottom:none}
+.audit-entry:hover{background:var(--bg)}
+.audit-entry-who{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.audit-who-name{font-size:11px;font-weight:700;color:var(--teal)}
+.audit-when{font-size:10px;color:var(--ink3)}
+.audit-entry-proj{font-size:10px;color:var(--ink3);margin-bottom:2px}
+.audit-entry-desc{font-size:12px;color:var(--ink2);line-height:1.4}
+.audit-empty{padding:28px;text-align:center;color:var(--ink3);font-size:12px}
 
 /* ── DASHBOARD ──────────────────────────────────────────────────────────── */
 .dash-wrap{padding:24px 28px 40px;overflow-y:auto;height:100%}
@@ -558,6 +568,15 @@ class SupabaseClient {
     if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return true;
   }
+  async insert(table, body) {
+    const res = await fetch(`${this.url}/rest/v1/${table}`, {
+      method:"POST",
+      headers:{...this.h,"Prefer":"return=minimal"},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    return true;
+  }
   async test() {
     const res = await fetch(`${this.url}/rest/v1/planificador?limit=1`, {headers:this.h});
     if(res.status===401) throw new Error("API Key inválida.");
@@ -588,16 +607,15 @@ class SupabaseClient {
 
 let db = null;
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const emailToName = (email) => {
+  if(!email) return "Usuario";
+  const local = email.split("@")[0];
+  return local.split(".").map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(" ");
+};
 const today = () => new Date().toISOString().slice(0,10);
 const fmtDate = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return `${day}/${m}/${y}`; };
 const isOverdue = d => d && d < today();
 const STATUS_OPTS = ["Pendiente","En Proceso","Completado","Bloqueado"];
-const UserContext = React.createContext("");
-function emailToName(email) {
-  if(!email) return "";
-  const local = email.split("@")[0];
-  return local.split(".").map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(" ");
-}
 const STATUS_CLASS = {"Pendiente":"s-pending","En Proceso":"s-inprogress","Completado":"s-done","Bloqueado":"s-blocked"};
 const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
 const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
@@ -633,8 +651,8 @@ function SetupScreen({onSetup}) {
     try {
       const client=new SupabaseClient(u,k);
       await client.test();
-      localStorage.setItem("pl_url",u);
-      localStorage.setItem("pl_key",k);
+      localStorage.setItem("sb_url",u);
+      localStorage.setItem("sb_key",k);
       onSetup(u,k);
     } catch(e){setError("⚠️ "+e.message);}
     setTesting(false);
@@ -668,40 +686,24 @@ function SetupScreen({onSetup}) {
 }
 
 // ── CITY SIDEBAR ────────────────────────────────────────────────────────────
-// Subgroup config
-const SUBGROUPS = {
-  "Antofagasta": [
-    {label:"Antillas", match: n => /antillas/i.test(n)},
-    {label:"Parque Norte", match: n => /halcones|vicuñas|cóndores|condores|alpacas|flamencos|tamarugal/i.test(n)},
-    {label:"Otros", match: n => /petra|lote 5|lote 1z/i.test(n)},
-  ],
-  "Maipú": [
-    {label:"El Rosal", match: n => /rosal oriente/i.test(n)},
-    {label:"Barrio Oeste", match: n => /barrio oeste/i.test(n)},
-  ],
-};
-
-function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchive}) {
+function CitySidebar({projects, selId, onSelect, onDeleteProject}) {
   const firstCity = projects.length > 0 ? getCity(projects[0].name) : null;
   const [openCities, setOpenCities] = useState(() => {
     const init = {};
     if(firstCity) init[firstCity] = true;
     return init;
   });
-  const [openSubgroups, setOpenSubgroups] = useState({});
 
+  // Auto-open city of selected project
   useEffect(() => {
     if(!selId) return;
     const p = projects.find(p => p.id === selId);
     if(!p) return;
     const city = getCity(p.name);
-    const short = getShortName(p.name);
     setOpenCities(prev => ({...prev, [city]: true}));
-    const sgs = SUBGROUPS[city] || [];
-    const sg = sgs.find(s => s.match(short));
-    if(sg) setOpenSubgroups(prev => ({...prev, [`${city}__${sg.label}`]: true}));
   }, [selId]);
 
+  // Group by city, preserve order
   const cityMap = {};
   const cityOrder = [];
   for(const p of projects) {
@@ -710,25 +712,7 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchive}) {
     cityMap[city].push(p);
   }
 
-  const toggleCity = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
-  const toggleSG = key => setOpenSubgroups(prev => ({...prev, [key]: !prev[key]}));
-
-  function renderProj(p) {
-    return (
-      <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
-        <span className="proj-dot" style={{background:p.color}}/>
-        <span className="proj-name">{getShortName(p.name)}</span>
-        <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
-        <button onClick={e=>{e.stopPropagation();onArchive(p.id,true);}}
-          title="Archivar proyecto"
-          style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
-          className="proj-del-btn">📦</button>
-        <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
-          style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
-          className="proj-del-btn">🗑</button>
-      </div>
-    );
-  }
+  const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
 
   return (
     <div className="proj-list">
@@ -736,42 +720,25 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchive}) {
         const projs = cityMap[city];
         const isOpen = !!openCities[city];
         const hasActive = projs.some(p => p.id === selId);
-        const sgs = SUBGROUPS[city] || [];
-        let ungrouped = [...projs];
-        const sgBuckets = sgs.map(sg => {
-          const matched = projs.filter(p => sg.match(getShortName(p.name)));
-          ungrouped = ungrouped.filter(p => !sg.match(getShortName(p.name)));
-          return {...sg, projs: matched};
-        }).filter(sg => sg.projs.length > 0);
         return (
           <div key={city} className="city-group">
-            <div className="city-header" onClick={() => toggleCity(city)}>
+            <div className="city-header" onClick={() => toggle(city)}>
               <span className={`city-arrow${isOpen?" open":""}`}>▶</span>
               <span className="city-name" style={hasActive?{color:"#a0c8d0"}:{}}>{city}</span>
               <span className="city-count">{projs.length}</span>
             </div>
             {isOpen && (
               <div className="city-projects">
-                {sgBuckets.map(sg => {
-                  const sgKey = `${city}__${sg.label}`;
-                  const sgOpen = !!openSubgroups[sgKey];
-                  const sgActive = sg.projs.some(p => p.id === selId);
-                  return (
-                    <div key={sgKey} className="subgroup">
-                      <div className="subgroup-header" onClick={() => toggleSG(sgKey)}>
-                        <span className={`subgroup-arrow${sgOpen?" open":""}`}>▶</span>
-                        <span className="subgroup-name" style={sgActive?{color:"#7ab8c0"}:{}}>{sg.label}</span>
-                        <span className="subgroup-count">{sg.projs.length}</span>
-                      </div>
-                      {sgOpen && (
-                        <div className="subgroup-projects">
-                          {sg.projs.map(p => renderProj(p))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                {ungrouped.map(p => renderProj(p))}
+                {projs.map(p => (
+                  <div key={p.id} className={`proj-item${selId===p.id?" active":""}`} onClick={() => onSelect(p.id)}>
+                    <span className="proj-dot" style={{background:p.color}}/>
+                    <span className="proj-name">{getShortName(p.name)}</span>
+                    <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+                    <button onClick={e=>{e.stopPropagation();if(confirm(`¿Eliminar "${p.name}" y todas sus actividades?`))onDeleteProject(p.id);}}
+                      style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:11,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
+                      className="proj-del-btn">🗑</button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -782,25 +749,39 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchive}) {
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog}) {
   const [open,setOpen]=useState(false);
-  const rowRef=useRef(null);
-  useEffect(()=>{
-    if(forceOpen){
-      setOpen(true);
-      setTimeout(()=>rowRef.current?.scrollIntoView({behavior:"smooth",block:"center"}),100);
-    }
-  },[forceOpen]);
   const [form,setForm]=useState({...task,log:task.log||[]});
   const [newLogDate,setNewLogDate]=useState(today());
   const [newLogText,setNewLogText]=useState("");
-  const userEmail=React.useContext(UserContext);
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const saveAndClose=()=>{onUpdate(actId,{...form});setOpen(false);};
+  const [saveError,setSaveError]=useState("");
+  const saveAndClose=()=>{
+    const missing=[];
+    if(!form.responsable)missing.push("Responsable");
+    if(!form.tipo)missing.push("Tipo");
+    if(!form.duracion)missing.push("Duración");
+    if(!form.fechaInicioE)missing.push("Fecha Inicio");
+    if(missing.length>0){setSaveError("Campos obligatorios: "+missing.join(", "));return;}
+    setSaveError("");
+    // Build audit description
+    const changes=[];
+    if(form.tarea!==task.tarea)changes.push(`nombre: "${form.tarea}"`);
+    if(form.responsable!==task.responsable)changes.push(`responsable: ${form.responsable}`);
+    if(form.estado!==task.estado)changes.push(`estado: ${form.estado}`);
+    if(form.fechaTerminoR!==task.fechaTerminoR&&form.fechaTerminoR)changes.push(`fecha término real: ${form.fechaTerminoR}`);
+    if(form.fechaInicioE!==task.fechaInicioE)changes.push(`fecha inicio: ${form.fechaInicioE}`);
+    if(form.tipo!==task.tipo&&form.tipo)changes.push(`tipo: ${form.tipo==="T"?"Tarea":"Restricción"}`);
+    const auditDesc=`Tarea "${form.tarea}"${changes.length?" — "+changes.join(", "):""}`;
+    onUpdate(actId,{...form},auditDesc);
+    if(onAuditLog&&changes.length>0)onAuditLog("tarea_modificada",auditDesc);
+    setOpen(false);
+  };
   const addLog=()=>{
     if(!newLogText.trim())return;
-    const author=emailToName(userEmail)||"";
-    setForm(f=>({...f,log:[...f.log,{id:uid(),date:newLogDate,text:newLogText.trim(),author}]}));
+    const logEntry={id:uid(),date:newLogDate,text:newLogText.trim()};
+    setForm(f=>({...f,log:[...f.log,logEntry]}));
+    if(onAuditLog)onAuditLog("bitacora",`Bitácora en "${task.tarea}": "${newLogText.trim().slice(0,80)}${newLogText.trim().length>80?"...":""}"`);
     setNewLogText("");
   };
   const delLog=lid=>setForm(f=>({...f,log:f.log.filter(l=>l.id!==lid)}));
@@ -812,12 +793,9 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
   const lastLog=form.log.length>0?form.log[form.log.length-1]:null;
   const overdue=isOverdue(task.fechaTerminoE)&&task.estado!=="Completado";
   return (
-    <div className="task-row-wrap" ref={rowRef}>
+    <div className="task-row-wrap">
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
         <div className="td td-num">{globalIdx}</div>
-        <div className="td" style={{textAlign:"center",padding:"0 2px"}}>
-          {task.tipo&&<span className={`tipo-badge tipo-${task.tipo}`}>{task.tipo}</span>}
-        </div>
         <div className="td">
           <div className="task-name">{task.tarea}</div>
           {lastLog&&<div className="task-desc-preview">{fmtDate(lastLog.date)} — {lastLog.text}</div>}
@@ -837,15 +815,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
               <input className="detail-input" value={form.tarea} onChange={e=>set("tarea",e.target.value)}/>
             </div>
             <div className="detail-field">
-              <div className="detail-label">Tipo</div>
-              <select className="detail-input" value={form.tipo||""} onChange={e=>set("tipo",e.target.value)}>
-                <option value="">— Sin clasificar —</option>
-                <option value="T">Tarea</option>
-                <option value="R">Restricción</option>
-              </select>
-            </div>
-            <div className="detail-field">
-              <div className="detail-label">Responsable</div>
+              <div className="detail-label" style={{color:!form.responsable?"var(--red)":"var(--ink3)"}}>Responsable {!form.responsable&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
               <select className="detail-input" value={form.responsable||""} onChange={e=>set("responsable",e.target.value)}>
                 <option value="">— Sin asignar —</option>
                 {RESPONSABLES.map(r=><option key={r} value={r}>{r}</option>)}
@@ -865,12 +835,34 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
               </select>
             </div>
             <div className="detail-field">
-              <div className="detail-label">Duración (días)</div>
-              <input className="detail-input" type="number" value={form.duracion||""} onChange={e=>set("duracion",e.target.value)}/>
+              <div className="detail-label" style={{color:!form.tipo?"var(--red)":"var(--ink3)"}}>Tipo {!form.tipo&&<span style={{fontSize:9,fontWeight:700}}>*</span>}</div>
+              <select className="detail-input" value={form.tipo||""} onChange={e=>set("tipo",e.target.value)} style={{borderColor:!form.tipo?"var(--red)":""}}>
+                <option value="">— Sin clasificar —</option>
+                <option value="T">T — Tarea</option>
+                <option value="R">R — Restricción</option>
+              </select>
             </div>
             <div className="detail-field">
-              <div className="detail-label">Fecha Inicio (E)</div>
-              <input className="detail-input" type="date" value={form.fechaInicioE||""} onChange={e=>set("fechaInicioE",e.target.value)}/>
+              <div className="detail-label" style={{color:!form.duracion?"var(--red)":"var(--ink3)"}}>Duración (días) {!form.duracion&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
+              <input className="detail-input" type="number" value={form.duracion||""} onChange={e=>{
+                const v=e.target.value;
+                setForm(f=>{
+                  const dur=parseInt(v);
+                  const newEnd=(f.fechaInicioE&&dur>0)?new Date(new Date(f.fechaInicioE).getTime()+dur*86400000).toISOString().slice(0,10):"";
+                  return {...f,duracion:v,...(newEnd?{fechaTerminoE:newEnd}:{})};
+                });
+              }}/>
+            </div>
+            <div className="detail-field">
+              <div className="detail-label" style={{color:!form.fechaInicioE?"var(--red)":"var(--ink3)"}}>Fecha Inicio (E) {!form.fechaInicioE&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
+              <input className="detail-input" type="date" value={form.fechaInicioE||""} onChange={e=>{
+                const v=e.target.value;
+                setForm(f=>{
+                  const dur=parseInt(f.duracion);
+                  const newEnd=(v&&dur>0)?new Date(new Date(v).getTime()+dur*86400000).toISOString().slice(0,10):"";
+                  return {...f,fechaInicioE:v,...(newEnd?{fechaTerminoE:newEnd}:{})};
+                });
+              }}/>
             </div>
             <div className="detail-field">
               <div className="detail-label">Fecha Término (E)</div>
@@ -895,10 +887,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
           {form.log.length===0&&<p style={{fontSize:12,color:"var(--ink3)",marginBottom:10}}>Sin entradas aún.</p>}
           {[...form.log].reverse().map(l=>(
             <div className="log-entry" key={l.id}>
-              <div className="log-date" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                {fmtDate(l.date)}
-                {l.author&&<span style={{fontSize:10,color:"#ffffff",fontWeight:600,background:"rgba(255,255,255,0.08)",padding:"1px 6px",borderRadius:4}}>👤 {l.author}</span>}
-              </div>
+              <div className="log-date">{fmtDate(l.date)}</div>
               {editingLogId===l.id?(
                 <div className="log-editing">
                   <textarea className="log-edit-inp" value={editLogText} onChange={e=>setEditLogText(e.target.value)} autoFocus onKeyDown={e=>{if(e.key==="Escape")cancelEditLog();if(e.key==="Enter"&&e.ctrlKey){setForm(f=>({...f,log:f.log.map(ll=>ll.id===l.id?{...ll,text:editLogText}:ll)}));setEditingLogId(null);}}}/>
@@ -921,11 +910,14 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
             <textarea className="log-text-inp" placeholder="Agregar nota... (Ctrl+Enter)" value={newLogText} onChange={e=>setNewLogText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&e.ctrlKey)addLog();}}/>
             <button className="btn btn-primary btn-sm" style={{alignSelf:"flex-end",flexShrink:0}} onClick={addLog}>+ Agregar</button>
           </div>
-          <div className="detail-actions">
-            <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("¿Eliminar esta tarea?"))onDelete(actId,task.id);}}>🗑 Eliminar</button>
-            <div style={{display:"flex",gap:7}}>
-              <button className="btn btn-outline btn-sm" onClick={()=>{setForm({...task,log:task.log||[]});setOpen(false);}}>Cancelar</button>
-              <button className="btn btn-primary btn-sm" onClick={saveAndClose}>Guardar cambios</button>
+          <div className="detail-actions" style={{flexDirection:"column",gap:8}}>
+            {saveError&&<div style={{background:"var(--red-lt)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:6,padding:"7px 11px",fontSize:12,color:"var(--red)",width:"100%"}}>{saveError}</div>}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%"}}>
+              <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("¿Eliminar esta tarea?"))onDelete(actId,task.id);}}>🗑 Eliminar</button>
+              <div style={{display:"flex",gap:7}}>
+                <button className="btn btn-outline btn-sm" onClick={()=>{setForm({...task,log:task.log||[]});setOpen(false);setSaveError("");}}>Cancelar</button>
+                <button className="btn btn-primary btn-sm" onClick={saveAndClose}>Guardar cambios</button>
+              </div>
             </div>
           </div>
         </div>
@@ -935,22 +927,12 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,forceOpen}) {
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,jumpToTask}) {
-  const hasJump = jumpToTask && jumpToTask.actId === activity.id;
-  const [collapsed,setCollapsed]=useState(!hasJump);
-  useEffect(()=>{if(hasJump)setCollapsed(false);},[hasJump]);
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog}) {
+  const [collapsed,setCollapsed]=useState(true);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
   const [nameVal,setNameVal]=useState(activity.name);
-
-  // Default sort: T first (by fechaInicioE asc), then R (by fechaInicioE asc)
-  const sortedTasks=[...activity.tasks].sort((a,b)=>{
-    const ta=a.tipo==="R"?1:0, tb=b.tipo==="R"?1:0;
-    if(ta!==tb) return ta-tb;
-    return (a.fechaInicioE||"9999").localeCompare(b.fechaInicioE||"9999");
-  });
-
   const confirmAdd=()=>{
     if(!newTaskName.trim())return setAddingTask(false);
     onAddTask(activity.id,newTaskName.trim());
@@ -978,7 +960,6 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
         <>
           <div className="tasks-table-head">
             <div className="th" style={{textAlign:"center"}}>#</div>
-            <div className="th" style={{textAlign:"center"}}></div>
             <div className="th">Tarea / Restricción</div>
             <div className="th" style={{textAlign:"center"}}>Prior.</div>
             <div className="th">Estado</div>
@@ -988,8 +969,8 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
             <div className="th" style={{textAlign:"center"}}>IS</div>
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
-          {sortedTasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} forceOpen={jumpToTask&&jumpToTask.taskId===task.id}/>
+          {activity.tasks.map((task,i)=>(
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -1472,7 +1453,6 @@ function InformeView({project}) {
         <div className="inf-task-name">{t.tarea}</div>
         <div className="inf-task-meta">
           {t.responsable&&<span className="inf-task-resp">👤 {t.responsable}</span>}
-          {t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`}>{t.tipo}</span>}
           {t.fechaTerminoE&&<span className="inf-task-date">📅 Término E: {fmtDate(t.fechaTerminoE)}</span>}
           {t.fechaTerminoR&&<span className="inf-task-date">✅ Completado: {fmtDate(t.fechaTerminoR)}</span>}
           {t.informeSocio&&<span className="inf-task-badge" style={{background:"rgba(26,95,110,0.12)",color:"var(--teal)"}}>📋 IS</span>}
@@ -1572,7 +1552,7 @@ function DashboardView({projects, onSelectProject}) {
   // When city changes, reset project selection
   React.useEffect(()=>setSelectedProjs([]),[filterCity]);
 
-  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name,actId:a.id}))));
+  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
   const allResponsables = [...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
   const allTasks = filterResp==="all" ? allTasksRaw : allTasksRaw.filter(t=>t.responsable===filterResp);
   const done = allTasks.filter(t=>t.estado==="Completado").length;
@@ -1684,11 +1664,11 @@ function DashboardView({projects, onSelectProject}) {
           <h4>Tareas más atrasadas</h4>
           {overdueTasks.length===0?<p style={{color:"var(--ink3)",fontSize:12,textAlign:"center",padding:20}}>✅ Sin tareas atrasadas</p>:
           overdueTasks.map((t,i)=>(
-            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
+            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject(t.projId)}>
               <span className="dash-overdue-days">{daysDiff(t.fechaTerminoE)}</span>
               <div className="dash-overdue-info">
                 <div className="dash-overdue-task">{t.tarea}</div>
-                <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {t.actName} · {fmtShort(t.fechaTerminoE)}{t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`} style={{marginLeft:4}}>{t.tipo}</span>}</div>
+                <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {t.actName} · {fmtShort(t.fechaTerminoE)}</div>
               </div>
             </div>
           ))}
@@ -1704,11 +1684,11 @@ function DashboardView({projects, onSelectProject}) {
             const bg=diff<=7?"var(--red-lt)":diff<=14?"rgba(230,160,0,0.12)":"rgba(20,160,180,0.1)";
             const col=diff<=7?"var(--red)":diff<=14?"var(--amber)":"var(--teal)";
             return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
                 <span className="dash-upcoming-badge" style={{background:bg,color:col}}>{daysUntil(t.fechaTerminoE)}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
-                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}{t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`} style={{marginLeft:4}}>{t.tipo}</span>}</div>
+                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}</div>
                 </div>
               </div>
             );
@@ -1723,11 +1703,11 @@ function DashboardView({projects, onSelectProject}) {
               const isOverdueIS=t.fechaTerminoE&&t.fechaTerminoE<today;
               const badge=isOverdueIS?{bg:"var(--red-lt)",col:"var(--red)",label:"⚠ Atrasado"}:{bg:"rgba(20,160,180,0.12)",col:"var(--teal)",label:t.estado};
               return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject({projId:t.projId,taskId:t.id,actId:t.actId})}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
                 <span className="dash-upcoming-badge" style={{background:badge.bg,color:badge.col}}>{badge.label}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
-                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}{t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`} style={{marginLeft:4}}>{t.tipo}</span>}</div>
+                  <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {fmtShort(t.fechaTerminoE)}</div>
                 </div>
               </div>
             );});
@@ -1765,7 +1745,7 @@ const KANBAN_COLS = [
 const PRIO_COLORS={1:"#c0392b",2:"#b7620a",3:"#1a5f6e",4:"#8a8780"};
 const PRIO_LABELS={1:"Alta",2:"Media",3:"Normal",4:"Baja"};
 
-function KanbanView({project, onUpdateTask}) {
+function KanbanView({project, onUpdateTask, onAuditLog}) {
   const [dragging, setDragging] = useState(null); // {taskId, actId}
   const [dragOver, setDragOver] = useState(null);
   const today = new Date().toISOString().slice(0,10);
@@ -1790,7 +1770,8 @@ function KanbanView({project, onUpdateTask}) {
     const task=allTasks.find(t=>t.id===dragging.taskId);
     const updates={estado:newStatus};
     if(newStatus==="Completado"&&!task.fechaTerminoR) updates.fechaTerminoR=today;
-    onUpdateTask(dragging.actId, {...task,...updates});
+    onUpdateTask(dragging.actId, {...task,...updates}, `Tarea "${task.tarea}" → ${newStatus}`);
+    if(onAuditLog)onAuditLog("tarea_modificada",`Tarea "${task.tarea}" movida a ${newStatus}`);
     setDragging(null);setDragOver(null);
   };
 
@@ -1815,7 +1796,6 @@ function KanbanView({project, onUpdateTask}) {
                 <div className="kanban-card-task">{t.tarea}</div>
                 <div className="kanban-card-act">{t.actName}</div>
                 <div className="kanban-card-footer">
-                  {t.tipo&&<span className={`tipo-badge tipo-${t.tipo}`}>{t.tipo}</span>}
                   <span className="kanban-card-prio" style={{background:PRIO_COLORS[t.prioridad]+"22",color:PRIO_COLORS[t.prioridad]}}>P{t.prioridad} {PRIO_LABELS[t.prioridad]}</span>
                   {t.responsable&&<span className="kanban-card-resp">👤 {t.responsable.split(" ")[0]}</span>}
                   {t.fechaTerminoE&&<span className="kanban-card-date">{overdue?"⚠ ":""}{t.fechaTerminoE.slice(5).replace("-","/")}</span>}
@@ -1887,8 +1867,6 @@ function MobileProjectList({projects, onSelect}) {
 function App({onSignOut, userEmail}) {
   const [projects,setProjects]=useState([]);
   const [selId,setSelId]=useState(null);
-  const [jumpToTask,setJumpToTask]=useState(null);
-  const [showArchived,setShowArchived]=useState(false);
   const [syncStatus,setSyncStatus]=useState("syncing");
   const [lastSync,setLastSync]=useState(null);
   const [loading,setLoading]=useState(true);
@@ -1903,6 +1881,10 @@ function App({onSignOut, userEmail}) {
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [showDashboard,setShowDashboard]=useState(false);
   const [globalSearch,setGlobalSearch]=useState("");
+  const [showAudit,setShowAudit]=useState(false);
+  const [auditLogs,setAuditLogs]=useState([]);
+  const [auditUnread,setAuditUnread]=useState(0);
+  const lastAuditTs=useRef(null);
   const [showGlobalResults,setShowGlobalResults]=useState(false);
   const [isMobile,setIsMobile]=useState(()=>window.innerWidth<=768);
   useEffect(()=>{
@@ -1910,38 +1892,22 @@ function App({onSignOut, userEmail}) {
     window.addEventListener("resize",fn);
     return()=>window.removeEventListener("resize",fn);
   },[]);
+
   // On mobile, null selId means "show project list"
   const mobileShowList = isMobile && !selId && !showDashboard;
   const mobileShowProject = isMobile && !!selId && !showDashboard;
   const [search,setSearch]=useState("");
   const [filterPrio,setFilterPrio]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
-  const [filterTipo,setFilterTipo]=useState("all");
   const saveTimer=useRef(null);
   const pollTimer=useRef(null);
   const lastServerUpdated=useRef(null);
   const pendingSave=useRef(false);
+  const auditRef=useRef(null);
 
   const loadData=useCallback(async(silent=false)=>{
     if(!db)return;
     if(!silent)setSyncStatus("syncing");
-
-    // Build tipo lookup from embedded INITIAL_DATA
-    const tipoMap={};
-    (window.INITIAL_DATA||[]).forEach(p=>(p.activities||[]).forEach(a=>(a.tasks||[]).forEach(t=>{
-      if(t.tipo) tipoMap[t.id]=t.tipo;
-    })));
-    const mergeTipo=data=>data.map(p=>({...p,activities:(p.activities||[]).map(a=>{
-      // Deduplicate tasks by (tarea, fechaInicioE, fechaTerminoE)
-      const seen={};
-      const cleanTasks=(a.tasks||[]).filter(t=>{
-        const k=`${t.tarea||""}|${t.fechaInicioE||""}|${t.fechaTerminoE||""}`;
-        if(seen[k])return false;
-        seen[k]=true;return true;
-      });
-      return {...a,tasks:cleanTasks.map(t=>tipoMap[t.id]?{...t,tipo:tipoMap[t.id]}:t)};
-    })}));
-
     try {
       const rows=await db.select("planificador","id=eq.main");
       if(rows.length===0){
@@ -1949,14 +1915,17 @@ function App({onSignOut, userEmail}) {
         await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
         lastServerUpdated.current=now;
         setProjects(window.INITIAL_DATA);
+        if(window.INITIAL_DATA.length>0&&window.innerWidth>768)setSelId(p=>p||window.INITIAL_DATA[0].id);
       } else {
         const serverTime=rows[0].updated_at;
-        const newData=mergeTipo(rows[0].data);
+        const newData=rows[0].data;
         if(!silent){
           setProjects(newData);
+          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         } else if(!pendingSave.current&&serverTime!==lastServerUpdated.current){
           setProjects(newData);
+          if(window.innerWidth>768)setSelId(p=>p||(newData.length>0?newData[0].id:null));
           lastServerUpdated.current=serverTime;
         }
       }
@@ -1991,6 +1960,36 @@ function App({onSignOut, userEmail}) {
   },[]);
 
   const updateProjects=p=>{setProjects(p);saveProjects(p);};
+
+  const loadAuditLogs=useCallback(async()=>{
+    if(!db)return;
+    try{
+      const rows=await db.select("audit_log","order=created_at.desc&limit=60");
+      setAuditLogs(rows||[]);
+    }catch(e){console.error("Audit load",e);}
+  },[]);
+
+  const logAudit=useCallback(async(actionType,description,projectName="")=>{
+    if(!db)return;
+    try{
+      await db.insert("audit_log",{
+        user_email:userEmail||"",
+        user_name:emailToName(userEmail||""),
+        project_name:projectName,
+        action_type:actionType,
+        description:description
+      });
+      setAuditUnread(n=>n+1);
+      loadAuditLogs();
+    }catch(e){console.error("Audit insert",e);}
+  },[userEmail,loadAuditLogs]);
+
+  useEffect(()=>{
+    if(db){loadAuditLogs();}
+    const t=setInterval(()=>{if(db)loadAuditLogs();},30000);
+    return()=>clearInterval(t);
+  },[loadAuditLogs]);
+
   const updActs=(pid,fn)=>updateProjects(projects.map(p=>p.id===pid?{...p,activities:fn(p.activities)}:p));
   const addProject=()=>{
     const city=(newProjCity==="otra"?newProjCustomCity:newProjCity).trim();
@@ -1998,6 +1997,7 @@ function App({onSignOut, userEmail}) {
     const fullName=`${city} - ${newProjName.trim()}`;
     const p={id:uid(),name:fullName,color:newProjColor,activities:[]};
     updateProjects([...projects,p]);setSelId(p.id);
+    logAudit("nuevo_proyecto",`Nuevo proyecto creado: "${fullName}"`,fullName);
     setShowNewProj(false);setNewProjName("");setNewProjCity("");setNewProjCustomCity("");
   };
   const addActivity=()=>{
@@ -2005,7 +2005,6 @@ function App({onSignOut, userEmail}) {
     updActs(selId,acts=>[...acts,{id:uid(),name:newActName.trim(),tasks:[]}]);
     setShowNewAct(false);setNewActName("");
   };
-  const archiveProject=(pid,hidden)=>updateProjects(projects.map(p=>p.id===pid?{...p,is_hidden:hidden}:p));
   const deleteProject=(pid)=>{
     const remaining=projects.filter(p=>p.id!==pid);
     updateProjects(remaining);
@@ -2013,12 +2012,17 @@ function App({onSignOut, userEmail}) {
   };
   const renameAct=(aid,name)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,name}:a));
   const deleteAct=(aid)=>updActs(selId,acts=>acts.filter(a=>a.id!==aid));
-  const reorderTasks=(aid,newTasks)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:newTasks}:a));
   const addTask=(aid,tarea)=>{
-    const task={id:uid(),tarea,prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[]};
+    const task={id:uid(),tarea,tipo:"",prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[]};
     updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:[task,...a.tasks]}:a));
+    const proj=projects.find(p=>p.id===selId);
+    if(proj)logAudit("nueva_tarea",`Nueva tarea creada: "${tarea}"`,proj.name);
   };
-  const updateTask=(aid,task)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.map(t=>t.id===task.id?task:t)}:a));
+  const updateTask=(aid,task,auditDesc="")=>{
+    updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.map(t=>t.id===task.id?task:t)}:a));
+    const proj=projects.find(p=>p.id===selId);
+    if(proj&&auditDesc)logAudit("tarea_modificada",auditDesc,proj.name);
+  };
   const deleteTask=(aid,tid)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.filter(t=>t.id!==tid)}:a));
 
   const selProj=projects.find(p=>p.id===selId);
@@ -2034,11 +2038,10 @@ function App({onSignOut, userEmail}) {
         const mS=actMatch||t.tarea.toLowerCase().includes(q)||(t.responsable||"").toLowerCase().includes(q)||(t.log||[]).some(l=>l.text.toLowerCase().includes(q));
         const mP=filterPrio==="all"||String(t.prioridad)===filterPrio;
         const mSt=filterStatus==="all"||t.estado===filterStatus;
-        const mTipo=filterTipo==="all"||t.tipo===filterTipo;
-        return mS&&mP&&mSt&&mTipo;
+        return mS&&mP&&mSt;
       })
     };
-  }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all"||filterTipo!=="all")));
+  }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all")));
 
   if(loading)return(
     <div className="loading-screen">
@@ -2057,13 +2060,10 @@ function App({onSignOut, userEmail}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects.filter(p=>!p.is_hidden)} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject} onArchive={archiveProject}/>
+        <CitySidebar projects={projects} selId={selId} onSelect={setSelId} onDeleteProject={deleteProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects)}>⬇ Exportar CSV</button>
-          {projects.filter(p=>p.is_hidden).length>0&&(
-            <button className="sidebar-btn" style={{background:"rgba(255,255,255,0.04)",color:"#908d86"}} onClick={()=>setShowArchived(true)}>📦 Archivados ({projects.filter(p=>p.is_hidden).length})</button>
-          )}
           <div style={{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:8,paddingTop:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
             <span style={{fontSize:10,color:"#5a5750",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}} title={userEmail}>👤 {userEmail}</span>
             <button className="signout-btn" onClick={onSignOut} title="Cerrar sesión">Salir</button>
@@ -2077,21 +2077,6 @@ function App({onSignOut, userEmail}) {
       </div>
 
       <div className="main">
-        {syncStatus==="error"&&(
-          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <div style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:12,padding:"32px 40px",maxWidth:440,textAlign:"center",boxShadow:"0 8px 40px rgba(0,0,0,0.4)"}}>
-              <div style={{fontSize:40,marginBottom:12}}>⚠️</div>
-              <div style={{fontSize:17,fontWeight:700,color:"var(--ink)",marginBottom:10}}>Sin conexión a la base de datos</div>
-              <div style={{fontSize:13,color:"var(--ink2)",lineHeight:1.6,marginBottom:24}}>
-                Se perdió la conexión con el servidor.<br/>
-                Para reconectarse, cierre sesión y vuelva a ingresar con su cuenta.
-              </div>
-              <button className="btn btn-primary" onClick={onSignOut} style={{width:"100%",padding:"10px 0",fontSize:14}}>
-                Cerrar sesión y reconectar
-              </button>
-            </div>
-          </div>
-        )}
         <div className="global-nav">
           <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
           <button className={"global-nav-btn"+(!showDashboard?" active":"")} onClick={()=>setShowDashboard(false)}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
@@ -2124,6 +2109,38 @@ function App({onSignOut, userEmail}) {
               })()}
             </div>
             <button className="btn btn-outline btn-sm" onClick={()=>exportPDF(projects)} title="Exportar reporte PDF">📄 PDF</button>
+            <div className="audit-bell-wrap" ref={auditRef}>
+              <button className="audit-bell-btn" onClick={()=>{setShowAudit(s=>!s);setAuditUnread(0);}} title="Historial de cambios">
+                🔔
+                {auditUnread>0&&<span className="audit-badge">{auditUnread>99?"99+":auditUnread}</span>}
+              </button>
+              {showAudit&&(
+                <div className="audit-panel">
+                  <div className="audit-panel-head">
+                    <h4>🔔 Historial de cambios</h4>
+                    <button className="btn btn-ghost btn-xs" onClick={()=>setShowAudit(false)}>✕</button>
+                  </div>
+                  <div className="audit-list">
+                    {auditLogs.length===0?(
+                      <div className="audit-empty">Sin cambios registrados aún.</div>
+                    ):auditLogs.map((e,i)=>{
+                      const dt=new Date(e.created_at);
+                      const when=isNaN(dt)?"—":dt.toLocaleString("es-CL",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
+                      return(
+                        <div key={e.id||i} className="audit-entry">
+                          <div className="audit-entry-who">
+                            <span className="audit-who-name">👤 {e.user_name||e.user_email||"Usuario"}</span>
+                            <span className="audit-when">{when}</span>
+                          </div>
+                          {e.project_name&&<div className="audit-entry-proj">📁 {e.project_name.split(" - ").slice(1).join(" - ")||e.project_name}</div>}
+                          <div className="audit-entry-desc">{e.description}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="topbar">
@@ -2170,14 +2187,7 @@ function App({onSignOut, userEmail}) {
         </div>
         <div className="content" style={showDashboard?{padding:0}:{}}>
           {showDashboard?(
-            <DashboardView projects={projects.filter(p=>!p.is_hidden)} onSelectProject={(info)=>{
-              if(typeof info==="object"&&info.projId){
-                setSelId(info.projId);setJumpToTask({taskId:info.taskId,actId:info.actId});
-              } else {
-                setSelId(info);setJumpToTask(null);
-              }
-              setShowDashboard(false);setActiveTab("actividades");
-            }}/>
+            <DashboardView projects={projects} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
@@ -2215,23 +2225,18 @@ function App({onSignOut, userEmail}) {
                         <option value="all">Todos los estados</option>
                         {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
                       </select>
-                      <select className="filter-select" value={filterTipo} onChange={e=>setFilterTipo(e.target.value)}>
-                        <option value="all">Tareas y Restricciones</option>
-                        <option value="T">Solo Tareas</option>
-                        <option value="R">Solo Restricciones</option>
-                      </select>
-                      {(search||filterPrio!=="all"||filterStatus!=="all"||filterTipo!=="all")&&(
-                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio("all");setFilterStatus("all");setFilterTipo("all");}}>✕ Limpiar</button>
+                      {(search||filterPrio!=="all"||filterStatus!=="all")&&(
+                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio("all");setFilterStatus("all");}}>✕ Limpiar</button>
                       )}
                     </div>
                   )}
                   {filteredActs.map((a,ai)=>(
-                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} jumpToTask={jumpToTask} onReorderTasks={reorderTasks}/>
+                    <ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit}/>
                   ))}
                 </>
               )}
               {activeTab==="kanban"&&(
-                <KanbanView project={selProj} onUpdateTask={updateTask}/>
+                <KanbanView project={selProj} onUpdateTask={updateTask} onAuditLog={logAudit}/>
               )}
               {activeTab==="timeline"&&(
                 <TimelineView project={selProj}/>
@@ -2243,22 +2248,6 @@ function App({onSignOut, userEmail}) {
           )}
         </div>
       </div>
-
-      {showArchived&&(
-        <Modal title="Proyectos Archivados" onClose={()=>setShowArchived(false)}>
-          {projects.filter(p=>p.is_hidden).length===0?(
-            <div style={{color:"var(--ink3)",fontSize:13,padding:"20px 0",textAlign:"center"}}>No hay proyectos archivados.</div>
-          ):(
-            projects.filter(p=>p.is_hidden).map(p=>(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid var(--line)"}}>
-                <span className="proj-dot" style={{background:p.color,flexShrink:0}}/>
-                <span style={{flex:1,fontSize:13,color:"var(--ink)"}}>{p.name}</span>
-                <button className="btn btn-ghost btn-sm" onClick={()=>{archiveProject(p.id,false);if(projects.filter(q=>q.is_hidden).length<=1)setShowArchived(false);}}>Restaurar</button>
-              </div>
-            ))
-          )}
-        </Modal>
-      )}
 
       {showNewProj&&(()=>{
         const existingCities=[...new Set(projects.map(p=>p.name.split(" - ")[0].trim()))].sort();
@@ -2317,15 +2306,16 @@ function LoginScreen({onLogin}) {
   useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
 
   const handleLogin = async () => {
-    const u = localStorage.getItem("pl_url") || "https://jjphjrnvdjpchcekmqad.supabase.co";
-    const k = localStorage.getItem("pl_key") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
+    const u = localStorage.getItem("sb_url");
+    const k = localStorage.getItem("sb_key");
+    if(!u||!k) { setError("Primero configura las credenciales de Supabase."); return; }
     if(!email.trim()||!password) { setError("Ingresa tu email y contraseña."); return; }
     setLoading(true); setError("");
     try {
       const client = new SupabaseClient(u, k);
       const session = await client.signIn(email.trim().toLowerCase(), password);
       const token = session.access_token;
-      const userData = { email: session.user?.email || email.trim().toLowerCase(), token, expires: session.expires_at };
+      const userData = { email: session.user?.email, token, expires: session.expires_at };
       sessionStorage.setItem("gl_session", JSON.stringify(userData));
       onLogin(userData);
     } catch(e) {
@@ -2376,8 +2366,8 @@ function Root() {
   const [ready, setReady] = useState(false);
 
   useEffect(()=>{
-    const u=localStorage.getItem("pl_url") || "https://jjphjrnvdjpchcekmqad.supabase.co";
-    const k=localStorage.getItem("pl_key") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
+    const u=localStorage.getItem("sb_url");
+    const k=localStorage.getItem("sb_key");
     if(u&&k){
       db=new SupabaseClient(u,k);
       // If we have a session token, use it for authenticated requests
@@ -2400,15 +2390,12 @@ function Root() {
   };
 
   // Not yet configured with Supabase credentials
-  if(!ready && !localStorage.getItem("pl_url") && !true) return <SetupScreen onSetup={handleSetup}/>;
+  if(!ready && !localStorage.getItem("sb_url")) return <SetupScreen onSetup={handleSetup}/>;
   // Credentials exist but not logged in
-  // Bypass login for local testing
-  const isLocal = window.location.protocol === "file:";
-  if(!session && isLocal) return <UserContext.Provider value="local@test.com"><App onSignOut={()=>{}} userEmail="local@test.com"/></UserContext.Provider>;
-  if(!session) return <LoginScreen onLogin={handleLogin}/>
+  if(!session) return <LoginScreen onLogin={handleLogin}/>;
   // Need to setup db first
   if(!ready) return <SetupScreen onSetup={handleSetup}/>;
-  return <UserContext.Provider value={session.email}><App onSignOut={handleSignOut} userEmail={session.email}/></UserContext.Provider>;
+  return <App onSignOut={handleSignOut} userEmail={session.email}/>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
