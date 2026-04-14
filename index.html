@@ -1484,8 +1484,8 @@ function InformeView({project}) {
     .sort((a,b)=>(a.fechaTerminoE||"").localeCompare(b.fechaTerminoE||""));
   const pendientes=allTasks.filter(t=>t.estado==="Pendiente"&&!(t.fechaTerminoE&&t.fechaTerminoE<today))
     .sort((a,b)=>(a.fechaTerminoE||"zzz").localeCompare(b.fechaTerminoE||"zzz"));
-  const recientes=allTasks.filter(t=>t.estado==="Completado"&&t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)
-    .sort((a,b)=>b.fechaTerminoR.localeCompare(a.fechaTerminoR));
+  const recientes=allTasks.filter(t=>t.estado==="Completado"&&(filterStatus.length>0||( t.fechaTerminoR&&t.fechaTerminoR>=threeWeeksAgoStr)))
+    .sort((a,b)=>(b.fechaTerminoR||"").localeCompare(a.fechaTerminoR||""));
 
   const done=allTasksRaw.filter(t=>t.estado==="Completado").length;
   const total=allTasksRaw.length;
