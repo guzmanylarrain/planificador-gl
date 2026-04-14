@@ -1921,6 +1921,43 @@ function MobileProjectList({projects, onSelect}) {
   );
 }
 
+// ── FILTER MULTI ──────────────────────────────────────────────────────────────
+function FilterMulti({options, selected, onChange, placeholder}) {
+  const [open,setOpen]=React.useState(false);
+  const ref=React.useRef(null);
+  React.useEffect(()=>{
+    const fn=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
+    document.addEventListener("mousedown",fn);
+    return()=>document.removeEventListener("mousedown",fn);
+  },[]);
+  const allSel=selected.length===0;
+  const label=allSel?placeholder:`${selected.length} sel.`;
+  const toggle=v=>onChange(selected.includes(v)?selected.filter(x=>x!==v):[...selected,v]);
+  return(
+    <div ref={ref} style={{position:"relative",flexShrink:0}}>
+      <button onClick={()=>setOpen(o=>!o)} className="filter-select" style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",background:!allSel?"var(--teal)":"",color:!allSel?"#fff":"",borderColor:!allSel?"var(--teal)":"",minWidth:130,justifyContent:"space-between"}}>
+        <span>{label}</span>
+        <span style={{fontSize:9,opacity:0.6}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&(
+        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:200,background:"var(--white)",border:"1px solid var(--line)",borderRadius:8,boxShadow:"var(--shadow-lg)",minWidth:160,overflow:"hidden"}}>
+          <div onClick={()=>onChange([])} style={{padding:"8px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,background:allSel?"var(--bg)":"",fontWeight:allSel?600:400}}>
+            <input type="checkbox" readOnly checked={allSel} style={{margin:0}}/> Todos
+          </div>
+          <div style={{height:1,background:"var(--line)"}}/>
+          {options.map(o=>(
+            <div key={o.val} onClick={()=>toggle(o.val)} style={{padding:"7px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontSize:12,background:selected.includes(o.val)?"var(--bg)":"",fontWeight:selected.includes(o.val)?600:400}}>
+              <input type="checkbox" readOnly checked={selected.includes(o.val)} style={{margin:0}}/>
+              {o.dot&&<span style={{width:8,height:8,borderRadius:"50%",background:o.dot,flexShrink:0}}/>}
+              {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── MAIN APP ────────────────────────────────────────────────────────────────
 function App({onSignOut, userEmail}) {
   const [projects,setProjects]=useState([]);
@@ -1955,8 +1992,9 @@ function App({onSignOut, userEmail}) {
   const mobileShowList = isMobile && !selId && !showDashboard;
   const mobileShowProject = isMobile && !!selId && !showDashboard;
   const [search,setSearch]=useState("");
-  const [filterPrio,setFilterPrio]=useState("all");
-  const [filterStatus,setFilterStatus]=useState("all");
+  const [filterPrio,setFilterPrio]=useState([]);
+  const [filterStatus,setFilterStatus]=useState([]);
+  const [filterTipo,setFilterTipo]=useState([]);
   const saveTimer=useRef(null);
   const pollTimer=useRef(null);
   const lastServerUpdated=useRef(null);
@@ -2117,12 +2155,13 @@ function App({onSignOut, userEmail}) {
       ...a,
       tasks:a.tasks.filter(t=>{
         const mS=actMatch||t.tarea.toLowerCase().includes(q)||(t.responsable||"").toLowerCase().includes(q)||(t.log||[]).some(l=>l.text.toLowerCase().includes(q));
-        const mP=filterPrio==="all"||String(t.prioridad)===filterPrio;
-        const mSt=filterStatus==="all"||t.estado===filterStatus;
-        return mS&&mP&&mSt;
+        const mP=filterPrio.length===0||filterPrio.includes(String(t.prioridad));
+        const mSt=filterStatus.length===0||filterStatus.includes(t.estado);
+        const mTp=filterTipo.length===0||filterTipo.includes(t.tipo||"");
+        return mS&&mP&&mSt&&mTp;
       })
     };
-  }).filter(a=>a.tasks.length>0||(!(search||filterPrio!=="all"||filterStatus!=="all")));
+  }).filter(a=>a.tasks.length>0||(!(search||filterPrio.length||filterStatus.length||filterTipo.length)));
 
   if(fatalConnError)return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",gap:16,padding:24,textAlign:"center"}}>
@@ -2257,11 +2296,7 @@ function App({onSignOut, userEmail}) {
                   <div className="badge-progress-bar"><div className="badge-progress-fill" style={{width:pct+"%",background:fillColor}}/></div>
                   {pct}% avance
                 </span>
-                {overdue&&(
-                  <span className="badge-overdue" title={`Tarea más atrasada: ${overdue.tarea} — vencía ${overdue.fechaTerminoE}`}>
-                    ⚠ <span className="badge-overdue-label">Atrasada: {overdue.tarea}</span>
-                  </span>
-                )}
+                {overdue&&null}
               </>);
             })()}
           </div>
@@ -2310,17 +2345,23 @@ function App({onSignOut, userEmail}) {
                         <span className="search-icon">🔍</span>
                         <input className="search-inp" placeholder="Buscar actividad, tarea, responsable o nota..." value={search} onChange={e=>setSearch(e.target.value)}/>
                       </div>
-                      <select className="filter-select" value={filterPrio} onChange={e=>setFilterPrio(e.target.value)}>
-                        <option value="all">Todas las prioridades</option>
-                        <option value="1">1 — Alta</option><option value="2">2 — Media</option>
-                        <option value="3">3 — Normal</option><option value="4">4 — Baja</option>
-                      </select>
-                      <select className="filter-select" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
-                        <option value="all">Todos los estados</option>
-                        {STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
-                      </select>
-                      {(search||filterPrio!=="all"||filterStatus!=="all")&&(
-                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio("all");setFilterStatus("all");}}>✕ Limpiar</button>
+                      <FilterMulti
+                        placeholder="Todas las prioridades"
+                        options={[{val:"1",label:"1 — Alta"},{val:"2",label:"2 — Media"},{val:"3",label:"3 — Normal"},{val:"4",label:"4 — Baja"}]}
+                        selected={filterPrio} onChange={setFilterPrio}
+                      />
+                      <FilterMulti
+                        placeholder="Todos los estados"
+                        options={STATUS_OPTS.map(s=>({val:s,label:s}))}
+                        selected={filterStatus} onChange={setFilterStatus}
+                      />
+                      <FilterMulti
+                        placeholder="T / R"
+                        options={[{val:"T",label:"T — Tarea",dot:"#1a7a4a"},{val:"R",label:"R — Restricción",dot:"#c0392b"},{val:"",label:"Sin tipo"}]}
+                        selected={filterTipo} onChange={setFilterTipo}
+                      />
+                      {(search||filterPrio.length||filterStatus.length||filterTipo.length)&&(
+                        <button className="btn btn-ghost btn-sm" onClick={()=>{setSearch("");setFilterPrio([]);setFilterStatus([]);setFilterTipo([]);}}>✕ Limpiar</button>
                       )}
                     </div>
                   )}
