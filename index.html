@@ -2495,20 +2495,22 @@ function LoginScreen({onLogin}) {
 }
 
 function Root() {
+  // Hardcoded credentials — no setup screen needed
+  const SUPA_URL = "https://jjphjrnvdjpchcekmqad.supabase.co";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
+
   const [session, setSession] = useState(()=>{
     try { return JSON.parse(sessionStorage.getItem("gl_session")||"null"); } catch{ return null; }
   });
   const [ready, setReady] = useState(false);
 
   useEffect(()=>{
-    const u=localStorage.getItem("pl_url");
-    const k=localStorage.getItem("pl_key");
-    if(u&&k){
-      db=new SupabaseClient(u,k);
-      // If we have a session token, use it for authenticated requests
-      if(session?.token) db.setAuthToken(session.token);
-      setReady(true);
-    }
+    // Always use hardcoded credentials, also persist to localStorage for reconnect logic
+    localStorage.setItem("pl_url", SUPA_URL);
+    localStorage.setItem("pl_key", SUPA_KEY);
+    db = new SupabaseClient(SUPA_URL, SUPA_KEY);
+    if(session?.token) db.setAuthToken(session.token);
+    setReady(true);
   },[session]);
 
   const handleSetup=(u,k)=>{db=new SupabaseClient(u,k);setReady(true);};
