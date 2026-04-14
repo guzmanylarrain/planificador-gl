@@ -829,6 +829,12 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog}) {
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {task.tipo&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:18,height:18,borderRadius:"50%",fontSize:10,fontWeight:800,flexShrink:0,background:task.tipo==="T"?"rgba(26,122,74,0.12)":"rgba(192,57,43,0.12)",color:task.tipo==="T"?"#1a7a4a":"#c0392b",border:`1.5px solid ${task.tipo==="T"?"#1a7a4a":"#c0392b"}`}}>{task.tipo}</span>}
             <div className="task-name">{task.tarea}</div>
+            {(!task.responsable||!task.tipo||!task.duracion||!task.fechaInicioE)&&(
+              <span title={`Info incompleta: ${[!task.responsable?"responsable":null,!task.tipo?"tipo":null,!task.duracion?"duración":null,!task.fechaInicioE?"fecha inicio":null].filter(Boolean).join(", ")}`}
+                style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:10,fontWeight:700,color:"#c0392b",background:"rgba(192,57,43,0.1)",border:"1px solid rgba(192,57,43,0.25)",borderRadius:4,padding:"1px 5px",flexShrink:0,whiteSpace:"nowrap"}}>
+                ⚠ Incompleta
+              </span>
+            )}
           </div>
           {lastLog&&<div className="task-desc-preview">{fmtDate(lastLog.date)} — {lastLog.text}</div>}
         </div>
@@ -1451,8 +1457,9 @@ function DonutChart({data}) {
 
 function InformeView({project}) {
   const [soloIS, setSoloIS] = useState(false);
-  const [filterResp, setFilterResp] = useState("all");
-  const [filterPrio, setFilterPrio] = useState("all");
+  const [filterResp, setFilterResp] = useState([]);
+  const [filterPrio, setFilterPrio] = useState([]);
+  const [filterTipo, setFilterTipo] = useState([]);
   const today=new Date().toISOString().slice(0,10);
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
@@ -1462,8 +1469,9 @@ function InformeView({project}) {
 
   const filt=t=>{
     if(soloIS&&!t.informeSocio)return false;
-    if(filterResp!=="all"&&t.responsable!==filterResp)return false;
-    if(filterPrio!=="all"&&String(t.prioridad)!==filterPrio)return false;
+    if(filterResp.length>0&&!filterResp.includes(t.responsable))return false;
+    if(filterPrio.length>0&&!filterPrio.includes(String(t.prioridad)))return false;
+    if(filterTipo.length>0&&!filterTipo.includes(t.tipo||""))return false;
     return true;
   };
   const allTasks=allTasksRaw.filter(filt);
@@ -1536,20 +1544,24 @@ function InformeView({project}) {
           </div>
           <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             {allResponsables.length>1&&(
-              <select value={filterResp} onChange={e=>setFilterResp(e.target.value)}
-                style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:5,padding:"5px 8px",fontSize:11,color:"var(--ink2)",outline:"none",cursor:"pointer"}}>
-                <option value="all">Todos los responsables</option>
-                {allResponsables.map(r=><option key={r} value={r}>{r}</option>)}
-              </select>
+              <FilterMulti
+                placeholder="Todos los responsables"
+                options={allResponsables.map(r=>({val:r,label:r}))}
+                selected={filterResp} onChange={setFilterResp}
+              />
             )}
-            <select value={filterPrio} onChange={e=>setFilterPrio(e.target.value)}
-              style={{background:"var(--bg)",border:"1px solid var(--line)",borderRadius:5,padding:"5px 8px",fontSize:11,color:"var(--ink2)",outline:"none",cursor:"pointer"}}>
-              <option value="all">Todas las prioridades</option>
-              <option value="1">1 — Alta</option><option value="2">2 — Media</option>
-              <option value="3">3 — Normal</option><option value="4">4 — Baja</option>
-            </select>
-            {(filterResp!=="all"||filterPrio!=="all")&&(
-              <button className="btn btn-ghost btn-xs" onClick={()=>{setFilterResp("all");setFilterPrio("all");}}>✕</button>
+            <FilterMulti
+              placeholder="Todas las prioridades"
+              options={[{val:"1",label:"1 — Alta"},{val:"2",label:"2 — Media"},{val:"3",label:"3 — Normal"},{val:"4",label:"4 — Baja"}]}
+              selected={filterPrio} onChange={setFilterPrio}
+            />
+            <FilterMulti
+              placeholder="T / R"
+              options={[{val:"T",label:"T — Tarea",dot:"#1a7a4a"},{val:"R",label:"R — Restricción",dot:"#c0392b"}]}
+              selected={filterTipo} onChange={setFilterTipo}
+            />
+            {(filterResp.length>0||filterPrio.length>0||filterTipo.length>0)&&(
+              <button className="btn btn-ghost btn-xs" onClick={()=>{setFilterResp([]);setFilterPrio([]);setFilterTipo([]);}}>✕</button>
             )}
             <button className={"inf-toggle"+(soloIS?" on":"")} onClick={()=>setSoloIS(s=>!s)}>
               📋 {soloIS?"Solo IS":"Todo el equipo"}
@@ -1589,7 +1601,7 @@ function InformeView({project}) {
 
       {[atrasadas,enCurso,pendientes,recientes].every(s=>s.length===0)&&(
         <div className="inf-empty">
-          {(soloIS||filterResp!=="all"||filterPrio!=="all")?"No hay tareas que cumplan los filtros aplicados.":"No hay tareas para mostrar en este período."}
+          {(soloIS||filterResp.length>0||filterPrio.length>0||filterTipo.length>0)?"No hay tareas que cumplan los filtros aplicados.":"No hay tareas para mostrar en este período."}
         </div>
       )}
     </div>
