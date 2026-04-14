@@ -1460,6 +1460,7 @@ function InformeView({project}) {
   const [filterResp, setFilterResp] = useState([]);
   const [filterPrio, setFilterPrio] = useState([]);
   const [filterTipo, setFilterTipo] = useState([]);
+  const [filterStatus, setFilterStatus] = useState([]);
   const today=new Date().toISOString().slice(0,10);
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
@@ -1472,6 +1473,7 @@ function InformeView({project}) {
     if(filterResp.length>0&&!filterResp.includes(t.responsable))return false;
     if(filterPrio.length>0&&!filterPrio.includes(String(t.prioridad)))return false;
     if(filterTipo.length>0&&!filterTipo.includes(t.tipo||""))return false;
+    if(filterStatus.length>0&&!filterStatus.includes(t.estado))return false;
     return true;
   };
   const allTasks=allTasksRaw.filter(filt);
@@ -1496,7 +1498,10 @@ function InformeView({project}) {
   const dateStr=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
   function TaskCard({t,accentColor}) {
+    const [showAllLogs,setShowAllLogs]=React.useState(false);
     const log=lastLog(t);
+    const hasMultipleLogs=t.log&&t.log.length>1;
+    const logsToShow=showAllLogs?[...t.log].reverse():(log?[log]:[]);
     return(
       <div className="inf-task-card" style={{borderLeftColor:accentColor}}>
         <div className="inf-task-act">{t.actName}</div>
@@ -1507,11 +1512,17 @@ function InformeView({project}) {
           {t.fechaTerminoR&&<span className="inf-task-date">✅ Completado: {fmtDate(t.fechaTerminoR)}</span>}
           {t.informeSocio&&<span className="inf-task-badge" style={{background:"rgba(26,95,110,0.12)",color:"var(--teal)"}}>📋 IS</span>}
         </div>
-        {log&&(
-          <div className="inf-task-note">
-            {log.date&&<div className="inf-task-note-date">{fmtDate(log.date)}</div>}
-            <div>{log.text}</div>
+        {logsToShow.map((l,i)=>(
+          <div key={i} className="inf-task-note" style={i>0?{marginTop:4,opacity:0.85}:{}}>
+            {l.date&&<div className="inf-task-note-date">{fmtDate(l.date)}</div>}
+            <div>{l.text}</div>
           </div>
+        ))}
+        {hasMultipleLogs&&(
+          <button onClick={e=>{e.stopPropagation();setShowAllLogs(v=>!v);}}
+            style={{marginTop:5,background:"none",border:"none",cursor:"pointer",fontSize:11,color:"var(--teal)",fontWeight:600,padding:0,textAlign:"left"}}>
+            {showAllLogs?`▲ Ocultar (${t.log.length-1} más)`:`▼ Ver todos (${t.log.length} comentarios)`}
+          </button>
         )}
       </div>
     );
@@ -1556,12 +1567,17 @@ function InformeView({project}) {
               selected={filterPrio} onChange={setFilterPrio}
             />
             <FilterMulti
+              placeholder="Todos los estados"
+              options={STATUS_OPTS.map(s=>({val:s,label:s}))}
+              selected={filterStatus} onChange={setFilterStatus}
+            />
+            <FilterMulti
               placeholder="T / R"
               options={[{val:"T",label:"T — Tarea",dot:"#1a7a4a"},{val:"R",label:"R — Restricción",dot:"#c0392b"}]}
               selected={filterTipo} onChange={setFilterTipo}
             />
-            {(filterResp.length>0||filterPrio.length>0||filterTipo.length>0)&&(
-              <button className="btn btn-ghost btn-xs" onClick={()=>{setFilterResp([]);setFilterPrio([]);setFilterTipo([]);}}>✕</button>
+            {(filterResp.length>0||filterPrio.length>0||filterTipo.length>0||filterStatus.length>0)&&(
+              <button className="btn btn-ghost btn-xs" onClick={()=>{setFilterResp([]);setFilterPrio([]);setFilterTipo([]);setFilterStatus([]);}}>✕</button>
             )}
             <button className={"inf-toggle"+(soloIS?" on":"")} onClick={()=>setSoloIS(s=>!s)}>
               📋 {soloIS?"Solo IS":"Todo el equipo"}
@@ -1601,7 +1617,7 @@ function InformeView({project}) {
 
       {[atrasadas,enCurso,pendientes,recientes].every(s=>s.length===0)&&(
         <div className="inf-empty">
-          {(soloIS||filterResp.length>0||filterPrio.length>0||filterTipo.length>0)?"No hay tareas que cumplan los filtros aplicados.":"No hay tareas para mostrar en este período."}
+          {(soloIS||filterResp.length>0||filterPrio.length>0||filterTipo.length>0||filterStatus.length>0)?"No hay tareas que cumplan los filtros aplicados.":"No hay tareas para mostrar en este período."}
         </div>
       )}
     </div>
