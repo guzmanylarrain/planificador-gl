@@ -2225,6 +2225,13 @@ function App({onSignOut, userEmail}) {
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects.filter(p=>!p.archived))}>⬇ Exportar CSV</button>
+          <button className="sidebar-btn sbtn-export" onClick={()=>{
+            const blob=new Blob([JSON.stringify(projects,null,2)],{type:"application/json"});
+            const a=document.createElement("a");
+            a.href=URL.createObjectURL(blob);
+            a.download=`backup_GL_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+          }}>💾 Backup JSON</button>
           <div style={{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:8,paddingTop:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
             <span style={{fontSize:10,color:"#5a5750",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}} title={userEmail}>👤 {userEmail}</span>
             <button className="signout-btn" onClick={onSignOut} title="Cerrar sesión">Salir</button>
