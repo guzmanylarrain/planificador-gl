@@ -2408,8 +2408,7 @@ function App({onSignOut, userEmail}) {
       <div style={{fontSize:20,fontWeight:700,color:"var(--red)"}}>Error de conexión</div>
       <div style={{color:"var(--ink2)",maxWidth:360}}>No se pudo conectar a la base de datos después de varios intentos. Por favor, desconéctate y vuelve a conectarte.</div>
       <button className="btn btn-primary" onClick={()=>{
-        localStorage.removeItem("pl_url");
-        localStorage.removeItem("pl_key");
+        sessionStorage.removeItem("gl_session");
         window.location.reload();
       }}>Desconectar y reconectar</button>
     </div>
