@@ -656,6 +656,25 @@ class SupabaseClient {
       headers:{"Content-Type":"application/json","apikey":this.key,"Authorization":"Bearer "+accessToken}
     });
   }
+  async requestPasswordReset(email, redirectTo) {
+    const res = await fetch(`${this.url}/auth/v1/recover`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":this.key},
+      body:JSON.stringify({email, ...(redirectTo?{redirect_to:redirectTo}:{})})
+    });
+    if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error_description||d.msg||`HTTP ${res.status}`); }
+    return true;
+  }
+  async updatePassword(accessToken, newPassword) {
+    const res = await fetch(`${this.url}/auth/v1/user`, {
+      method:"PUT",
+      headers:{"Content-Type":"application/json","apikey":this.key,"Authorization":"Bearer "+accessToken},
+      body:JSON.stringify({password:newPassword})
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error_description||data.msg||"No se pudo actualizar la contraseña");
+    return data;
+  }
   setAuthToken(token) {
     this.h = {"Content-Type":"application/json","apikey":this.key,"Authorization":"Bearer "+token};
   }
@@ -2702,13 +2721,14 @@ function App({onSignOut, userEmail}) {
 
 // ── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 function LoginScreen({onLogin}) {
+  const [mode, setMode] = useState("login"); // "login" | "forgot" | "forgot-sent"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const emailRef = React.useRef();
 
-  useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
+  useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[mode]);
 
   const handleLogin = async () => {
     const u = localStorage.getItem("pl_url");
@@ -2729,6 +2749,22 @@ function LoginScreen({onLogin}) {
     setLoading(false);
   };
 
+  const handleForgot = async () => {
+    const u = localStorage.getItem("pl_url");
+    const k = localStorage.getItem("pl_key");
+    if(!u||!k) { setError("Error de configuración."); return; }
+    if(!email.trim()) { setError("Ingresa tu correo electrónico."); return; }
+    setLoading(true); setError("");
+    try {
+      const client = new SupabaseClient(u, k);
+      await client.requestPasswordReset(email.trim().toLowerCase(), window.location.origin+window.location.pathname);
+      setMode("forgot-sent");
+    } catch(e) {
+      setError(e.message || "No se pudo enviar el correo de recuperación");
+    }
+    setLoading(false);
+  };
+
   return(
     <div className="login-screen">
       <div className="login-card">
@@ -2737,6 +2773,7 @@ function LoginScreen({onLogin}) {
         </div>
         <div className="login-title">Planificador de Proyectos</div>
         <div className="login-sub">Acceso restringido — G&L Empresas</div>
+        {mode==="login"&&(
         <div>
           <label className="login-label">Correo electrónico</label>
           <input ref={emailRef} className={"login-input"+(error?" error":"")} type="email"
@@ -2754,7 +2791,49 @@ function LoginScreen({onLogin}) {
             {loading?"Verificando...":"Ingresar →"}
           </button>
           <div className="login-error">{error}</div>
+          <div style={{textAlign:"center",marginTop:14}}>
+            <button type="button" onClick={()=>{setMode("forgot");setError("");setPassword("");}}
+              style={{background:"none",border:"none",color:"var(--teal)",fontSize:12,cursor:"pointer",fontWeight:600,textDecoration:"underline",padding:4}}>
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
         </div>
+        )}
+        {mode==="forgot"&&(
+        <div>
+          <div style={{fontSize:12.5,color:"var(--ink2)",marginBottom:14,lineHeight:1.5,textAlign:"center"}}>
+            Ingresa tu correo y te enviaremos un link para restablecer tu contraseña.
+          </div>
+          <label className="login-label">Correo electrónico</label>
+          <input ref={emailRef} className={"login-input"+(error?" error":"")} type="email"
+            placeholder="tucorreo@guzmanylarrain.com"
+            value={email} onChange={e=>{setEmail(e.target.value);setError("")}}
+            onKeyDown={e=>e.key==="Enter"&&handleForgot()}
+            disabled={loading}/>
+          <button className="login-btn" onClick={handleForgot} disabled={loading}>
+            {loading?"Enviando...":"Enviar link de recuperación →"}
+          </button>
+          <div className="login-error">{error}</div>
+          <div style={{textAlign:"center",marginTop:14}}>
+            <button type="button" onClick={()=>{setMode("login");setError("");}}
+              style={{background:"none",border:"none",color:"var(--ink3)",fontSize:12,cursor:"pointer",fontWeight:600,padding:4}}>
+              ← Volver al login
+            </button>
+          </div>
+        </div>
+        )}
+        {mode==="forgot-sent"&&(
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:38,marginBottom:10}}>📧</div>
+          <div style={{fontSize:15,fontWeight:700,color:"var(--ink)",marginBottom:8}}>Revisa tu correo</div>
+          <div style={{fontSize:12.5,color:"var(--ink2)",lineHeight:1.55,marginBottom:16}}>
+            Te enviamos un link a <strong style={{color:"var(--ink)"}}>{email}</strong> para restablecer tu contraseña. Si no lo ves en unos minutos, revisa tu carpeta de Spam.
+          </div>
+          <button className="login-btn" onClick={()=>{setMode("login");setEmail("");setPassword("");setError("");}}>
+            Volver al login
+          </button>
+        </div>
+        )}
         <div className="login-footer">
           Acceso exclusivo para usuarios autorizados<br/>
           Guzmán &amp; Larraín Empresas
@@ -2764,10 +2843,95 @@ function LoginScreen({onLogin}) {
   );
 }
 
+function ResetPasswordScreen({accessToken, onDone}) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const handleSubmit = async () => {
+    setError("");
+    if(pw.length<12){ setError("La contraseña debe tener al menos 12 caracteres."); return; }
+    if(pw!==pw2){ setError("Las contraseñas no coinciden."); return; }
+    setLoading(true);
+    try {
+      const u = localStorage.getItem("pl_url");
+      const k = localStorage.getItem("pl_key");
+      const client = new SupabaseClient(u, k);
+      await client.updatePassword(accessToken, pw);
+      setDone(true);
+      // Clear recovery tokens from URL hash so it can't be reused
+      history.replaceState(null, "", window.location.pathname+window.location.search);
+    } catch(e) {
+      setError(e.message || "No se pudo actualizar la contraseña");
+    }
+    setLoading(false);
+  };
+
+  if(done) return (
+    <div className="login-screen">
+      <div className="login-card">
+        <div style={{textAlign:"center",padding:"10px 0"}}>
+          <div style={{fontSize:44,marginBottom:10}}>✅</div>
+          <div style={{fontSize:17,fontWeight:700,color:"var(--ink)",marginBottom:10,fontFamily:"'Libre Baskerville',serif"}}>Contraseña actualizada</div>
+          <div style={{fontSize:13,color:"var(--ink2)",lineHeight:1.55,marginBottom:18}}>
+            Tu contraseña fue cambiada correctamente. Ahora puedes ingresar con la nueva.
+          </div>
+          <button className="login-btn" onClick={onDone}>Ir al login →</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return(
+    <div className="login-screen">
+      <div className="login-card">
+        <div className="login-title">Nueva contraseña</div>
+        <div className="login-sub" style={{marginBottom:20}}>Establece tu contraseña nueva</div>
+        <div>
+          <label className="login-label">Nueva contraseña</label>
+          <input autoFocus className={"login-input"+(error?" error":"")} type="password"
+            placeholder="Mínimo 12 caracteres"
+            value={pw} onChange={e=>{setPw(e.target.value);setError("")}}
+            onKeyDown={e=>e.key==="Enter"&&document.getElementById("pw2-field")?.focus()}
+            disabled={loading}/>
+          <label className="login-label">Confirmar contraseña</label>
+          <input id="pw2-field" className={"login-input"+(error?" error":"")} type="password"
+            placeholder="Repite la contraseña"
+            value={pw2} onChange={e=>{setPw2(e.target.value);setError("")}}
+            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+            disabled={loading}/>
+          <div style={{fontSize:11,color:"var(--ink3)",marginTop:-6,marginBottom:10,lineHeight:1.4}}>
+            Usa 12+ caracteres, con mayúsculas, minúsculas, números y símbolos.
+          </div>
+          <button className="login-btn" onClick={handleSubmit} disabled={loading}>
+            {loading?"Guardando...":"Actualizar contraseña →"}
+          </button>
+          <div className="login-error">{error}</div>
+        </div>
+        <div className="login-footer">
+          Guzmán &amp; Larraín Empresas
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function parseRecoveryHash() {
+  const h = window.location.hash;
+  if(!h||h.length<2) return null;
+  const p = new URLSearchParams(h.slice(1));
+  if(p.get("type")==="recovery" && p.get("access_token")) return {accessToken:p.get("access_token")};
+  return null;
+}
+
 function Root() {
   // Hardcoded credentials — no setup screen needed
   const SUPA_URL = "https://jjphjrnvdjpchcekmqad.supabase.co";
   const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
+
+  const [recoveryToken, setRecoveryToken] = useState(() => parseRecoveryHash()?.accessToken || null);
 
   const [session, setSession] = useState(()=>{
     try { return JSON.parse(sessionStorage.getItem("gl_session")||"null"); } catch{ return null; }
@@ -2798,6 +2962,12 @@ function Root() {
 
   // Not yet configured with Supabase credentials
   if(!ready && !localStorage.getItem("pl_url")) return <SetupScreen onSetup={handleSetup}/>;
+  // User arrived from a password recovery email — show reset screen (takes priority over existing session)
+  if(recoveryToken) return <ResetPasswordScreen accessToken={recoveryToken} onDone={()=>{
+    sessionStorage.removeItem("gl_session");
+    setSession(null);
+    setRecoveryToken(null);
+  }}/>;
   // Credentials exist but not logged in
   if(!session) return <LoginScreen onLogin={handleLogin}/>;
   // Need to setup db first
