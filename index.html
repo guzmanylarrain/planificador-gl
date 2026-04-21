@@ -2209,7 +2209,7 @@ function FilterMulti({options, selected, onChange, placeholder}) {
 }
 
 // ── MAIN APP ────────────────────────────────────────────────────────────────
-function App({onSignOut, userEmail}) {
+function App({onSignOut, userEmail, accessToken}) {
   const [projects,setProjects]=useState([]);
   const [selId,setSelId]=useState(null);
   const [syncStatus,setSyncStatus]=useState("syncing");
@@ -2218,6 +2218,12 @@ function App({onSignOut, userEmail}) {
   const [showNewProj,setShowNewProj]=useState(false);
   const [showNewAct,setShowNewAct]=useState(false);
   const [showApplySipoc,setShowApplySipoc]=useState(false);
+  const [showChangePw,setShowChangePw]=useState(false);
+  const [changePwNew,setChangePwNew]=useState("");
+  const [changePwConfirm,setChangePwConfirm]=useState("");
+  const [changePwError,setChangePwError]=useState("");
+  const [changePwLoading,setChangePwLoading]=useState(false);
+  const [changePwSuccess,setChangePwSuccess]=useState(false);
   const [newProjName,setNewProjName]=useState("");
   const [newProjColor,setNewProjColor]=useState(COLORS[0]);
   const [newProjCity,setNewProjCity]=useState("");
@@ -2374,6 +2380,22 @@ function App({onSignOut, userEmail}) {
     if(proj)logAudit("aplicar_sipoc",`SIPOC aplicado al proyecto: "${proj.name}" (actividades reemplazadas)`,proj.name);
     setShowApplySipoc(false);
   };
+  const submitChangePw=async()=>{
+    setChangePwError("");
+    if(changePwNew.length<12){setChangePwError("La contraseña debe tener al menos 12 caracteres.");return;}
+    if(changePwNew!==changePwConfirm){setChangePwError("Las contraseñas no coinciden.");return;}
+    if(!accessToken){setChangePwError("Sesión inválida. Cierra sesión y vuelve a ingresar.");return;}
+    setChangePwLoading(true);
+    try{
+      await db.updatePassword(accessToken,changePwNew);
+      setChangePwSuccess(true);
+      logAudit("cambio_password",`${userEmail} cambió su contraseña`,"");
+    }catch(e){
+      setChangePwError(e.message||"No se pudo actualizar la contraseña.");
+    }
+    setChangePwLoading(false);
+  };
+  const closeChangePw=()=>{setShowChangePw(false);setChangePwNew("");setChangePwConfirm("");setChangePwError("");setChangePwSuccess(false);};
   const deleteProject=(pid)=>{
     const remaining=projects.filter(p=>p.id!==pid);
     updateProjects(remaining);
@@ -2463,6 +2485,7 @@ function App({onSignOut, userEmail}) {
           }}>💾 Backup JSON</button>
           <div style={{borderTop:"1px solid rgba(255,255,255,0.07)",marginTop:8,paddingTop:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
             <span style={{fontSize:10,color:"#5a5750",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}} title={userEmail}>👤 {userEmail}</span>
+            <button className="signout-btn" onClick={()=>setShowChangePw(true)} title="Cambiar contraseña" style={{padding:"5px 9px"}}>🔑</button>
             <button className="signout-btn" onClick={onSignOut} title="Cerrar sesión">Salir</button>
           </div>
         </div>
@@ -2713,6 +2736,42 @@ function App({onSignOut, userEmail}) {
           </div>
         </Modal>
       )}
+      {showChangePw&&(
+        <Modal title="Cambiar contraseña" onClose={closeChangePw} footer={changePwSuccess?<>
+          <button className="btn btn-primary" onClick={closeChangePw}>Listo</button>
+        </>:<>
+          <button className="btn btn-outline" onClick={closeChangePw}>Cancelar</button>
+          <button className="btn btn-primary" onClick={submitChangePw} disabled={changePwLoading||!changePwNew||!changePwConfirm}>{changePwLoading?"Guardando...":"Guardar"}</button>
+        </>}>
+          {changePwSuccess?(
+            <div style={{textAlign:"center",padding:"10px 0"}}>
+              <div style={{fontSize:38,marginBottom:8}}>✅</div>
+              <div style={{fontSize:14,fontWeight:700,color:"var(--ink)",marginBottom:6}}>Contraseña actualizada</div>
+              <div style={{fontSize:12.5,color:"var(--ink2)",lineHeight:1.5}}>Tu nueva contraseña ya está activa. Guárdala en un lugar seguro.</div>
+            </div>
+          ):(
+            <div>
+              <div style={{fontSize:12.5,color:"var(--ink2)",marginBottom:12,lineHeight:1.5}}>
+                Elige una contraseña nueva y única, que no uses en otros servicios.
+              </div>
+              <div className="field"><label>Nueva contraseña</label>
+                <input type="password" autoFocus value={changePwNew} onChange={e=>{setChangePwNew(e.target.value);setChangePwError("");}}
+                  onKeyDown={e=>e.key==="Enter"&&document.getElementById("cpw-confirm")?.focus()}
+                  placeholder="Mínimo 12 caracteres"/>
+              </div>
+              <div className="field"><label>Confirmar contraseña</label>
+                <input id="cpw-confirm" type="password" value={changePwConfirm} onChange={e=>{setChangePwConfirm(e.target.value);setChangePwError("");}}
+                  onKeyDown={e=>e.key==="Enter"&&submitChangePw()}
+                  placeholder="Repite la contraseña"/>
+              </div>
+              <div style={{fontSize:11,color:"var(--ink3)",lineHeight:1.45,marginTop:-4}}>
+                Usa 12+ caracteres, con mayúsculas, minúsculas, números y símbolos.
+              </div>
+              {changePwError&&<div style={{marginTop:10,padding:"8px 11px",background:"var(--red-lt)",color:"var(--red)",border:"1px solid var(--red)",borderRadius:7,fontSize:12.5,fontWeight:600}}>{changePwError}</div>}
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
@@ -2721,14 +2780,13 @@ function App({onSignOut, userEmail}) {
 
 // ── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 function LoginScreen({onLogin}) {
-  const [mode, setMode] = useState("login"); // "login" | "forgot" | "forgot-sent"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const emailRef = React.useRef();
 
-  useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[mode]);
+  useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
 
   const handleLogin = async () => {
     const u = localStorage.getItem("pl_url");
@@ -2749,22 +2807,6 @@ function LoginScreen({onLogin}) {
     setLoading(false);
   };
 
-  const handleForgot = async () => {
-    const u = localStorage.getItem("pl_url");
-    const k = localStorage.getItem("pl_key");
-    if(!u||!k) { setError("Error de configuración."); return; }
-    if(!email.trim()) { setError("Ingresa tu correo electrónico."); return; }
-    setLoading(true); setError("");
-    try {
-      const client = new SupabaseClient(u, k);
-      await client.requestPasswordReset(email.trim().toLowerCase(), window.location.origin+window.location.pathname);
-      setMode("forgot-sent");
-    } catch(e) {
-      setError(e.message || "No se pudo enviar el correo de recuperación");
-    }
-    setLoading(false);
-  };
-
   return(
     <div className="login-screen">
       <div className="login-card">
@@ -2773,7 +2815,6 @@ function LoginScreen({onLogin}) {
         </div>
         <div className="login-title">Planificador de Proyectos</div>
         <div className="login-sub">Acceso restringido — G&L Empresas</div>
-        {mode==="login"&&(
         <div>
           <label className="login-label">Correo electrónico</label>
           <input ref={emailRef} className={"login-input"+(error?" error":"")} type="email"
@@ -2791,49 +2832,7 @@ function LoginScreen({onLogin}) {
             {loading?"Verificando...":"Ingresar →"}
           </button>
           <div className="login-error">{error}</div>
-          <div style={{textAlign:"center",marginTop:14}}>
-            <button type="button" onClick={()=>{setMode("forgot");setError("");setPassword("");}}
-              style={{background:"none",border:"none",color:"var(--teal)",fontSize:12,cursor:"pointer",fontWeight:600,textDecoration:"underline",padding:4}}>
-              ¿Olvidaste tu contraseña?
-            </button>
-          </div>
         </div>
-        )}
-        {mode==="forgot"&&(
-        <div>
-          <div style={{fontSize:12.5,color:"var(--ink2)",marginBottom:14,lineHeight:1.5,textAlign:"center"}}>
-            Ingresa tu correo y te enviaremos un link para restablecer tu contraseña.
-          </div>
-          <label className="login-label">Correo electrónico</label>
-          <input ref={emailRef} className={"login-input"+(error?" error":"")} type="email"
-            placeholder="tucorreo@guzmanylarrain.com"
-            value={email} onChange={e=>{setEmail(e.target.value);setError("")}}
-            onKeyDown={e=>e.key==="Enter"&&handleForgot()}
-            disabled={loading}/>
-          <button className="login-btn" onClick={handleForgot} disabled={loading}>
-            {loading?"Enviando...":"Enviar link de recuperación →"}
-          </button>
-          <div className="login-error">{error}</div>
-          <div style={{textAlign:"center",marginTop:14}}>
-            <button type="button" onClick={()=>{setMode("login");setError("");}}
-              style={{background:"none",border:"none",color:"var(--ink3)",fontSize:12,cursor:"pointer",fontWeight:600,padding:4}}>
-              ← Volver al login
-            </button>
-          </div>
-        </div>
-        )}
-        {mode==="forgot-sent"&&(
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:38,marginBottom:10}}>📧</div>
-          <div style={{fontSize:15,fontWeight:700,color:"var(--ink)",marginBottom:8}}>Revisa tu correo</div>
-          <div style={{fontSize:12.5,color:"var(--ink2)",lineHeight:1.55,marginBottom:16}}>
-            Te enviamos un link a <strong style={{color:"var(--ink)"}}>{email}</strong> para restablecer tu contraseña. Si no lo ves en unos minutos, revisa tu carpeta de Spam.
-          </div>
-          <button className="login-btn" onClick={()=>{setMode("login");setEmail("");setPassword("");setError("");}}>
-            Volver al login
-          </button>
-        </div>
-        )}
         <div className="login-footer">
           Acceso exclusivo para usuarios autorizados<br/>
           Guzmán &amp; Larraín Empresas
@@ -2972,7 +2971,7 @@ function Root() {
   if(!session) return <LoginScreen onLogin={handleLogin}/>;
   // Need to setup db first
   if(!ready) return <SetupScreen onSetup={handleSetup}/>;
-  return <App onSignOut={handleSignOut} userEmail={session.email}/>;
+  return <App onSignOut={handleSignOut} userEmail={session.email} accessToken={session.token}/>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
