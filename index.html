@@ -753,6 +753,11 @@ const buildSipocActivities = () => SIPOC_TEMPLATE.map(a => ({
 const getCity = name => name.split(" - ")[0].trim();
 const getShortName = name => { const parts = name.split(" - "); return parts.length > 1 ? parts.slice(1).join(" - ") : name; };
 const normPrio = p => (p>=1 && p<=3) ? p : 3;
+// Una tarea/restricción está "activa" (entra en dashboards/informes) si tiene las fechas necesarias.
+// - Tareas (tipo T): requieren Fecha Inicio Y Fecha Término (E)
+// - Restricciones (tipo R): requieren Fecha Inicio (no tienen Fecha Término E)
+// Si no cumple, es una tarea/restricción "vacía" que solo se ve en la vista Actividades.
+const isTaskActive = t => t && (t.tipo === "R" ? !!t.fechaInicioE : !!(t.fechaInicioE && t.fechaTerminoE));
 
 function exportCSV(projects) {
   const rows=[["Ciudad","Proyecto","Actividad","N°","Tarea/Restricción","Última nota","Prioridad","Estado","Responsable","Duración","Fecha Inicio E","Fecha Término E","Fecha Término R","Informe Socios"]];
@@ -855,7 +860,7 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
       onClick={() => onSelect(p.id)}>
       <span className="proj-dot" style={{background:p.color}}/>
       <span className="proj-name">{getShortName(p.name)}</span>
-      <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.length,0)}</span>
+      <span className="proj-count">{p.activities.reduce((s,a)=>s+a.tasks.filter(isTaskActive).length,0)}</span>
       <button onClick={e=>{e.stopPropagation();onArchiveProject(p.id);}}
         style={{background:"none",border:"none",color:"transparent",cursor:"pointer",fontSize:10,padding:"1px 3px",borderRadius:3,lineHeight:1,flexShrink:0,transition:"color 0.13s"}}
         className="proj-arch-btn" title={isArchived?"Desarchivar":"Archivar proyecto"}>📦</button>
@@ -1463,7 +1468,7 @@ function exportPDF(projects) {
 
   let projectsHTML = "";
   projects.forEach(p => {
-    const tasks=(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
+    const tasks=(p.activities||[]).flatMap(a=>a.tasks.filter(isTaskActive).map(t=>({...t,actName:a.name})));
     const done=tasks.filter(t=>t.estado==="Completado").length;
     const pct=tasks.length>0?Math.round(done/tasks.length*100):0;
     const city=p.name.split(" - ")[0];
@@ -1634,7 +1639,7 @@ function InformeView({project}) {
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
 
-  const allTasksRaw=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
+  const allTasksRaw=(project.activities||[]).flatMap(a=>a.tasks.filter(isTaskActive).map(t=>({...t,actName:a.name})));
   const allResponsables=[...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
 
   const filt=t=>{
@@ -1890,7 +1895,7 @@ function DashboardView({projects, onSelectProject}) {
   // When city changes, reset project selection
   React.useEffect(()=>setSelectedProjs([]),[filterCity]);
 
-  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
+  const allTasksRaw = filtered.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks.filter(isTaskActive).map(t=>({...t,projName:p.name,projId:p.id,projColor:p.color,actName:a.name}))));
   const allResponsables = [...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
   const allTasks = filterResp==="all" ? allTasksRaw : allTasksRaw.filter(t=>t.responsable===filterResp);
   const done = allTasks.filter(t=>t.estado==="Completado").length;
@@ -1919,7 +1924,7 @@ function DashboardView({projects, onSelectProject}) {
   const maxResp = respList.length>0?respList[0][1]:1;
 
   const projSorted = [...filtered].map(p=>{
-    const tasks=(p.activities||[]).flatMap(a=>a.tasks);
+    const tasks=(p.activities||[]).flatMap(a=>a.tasks.filter(isTaskActive));
     const d=tasks.filter(t=>t.estado==="Completado").length;
     const pct=tasks.length>0?Math.round(d/tasks.length*100):0;
     return {...p, pct, taskCount:tasks.length};
@@ -2089,7 +2094,7 @@ function KanbanView({project, onUpdateTask, onAuditLog}) {
   const today = new Date().toISOString().slice(0,10);
 
   const allTasks = (project.activities||[]).flatMap(a=>
-    a.tasks.map(t=>({...t, actId:a.id, actName:a.name}))
+    a.tasks.filter(isTaskActive).map(t=>({...t, actId:a.id, actName:a.name}))
   );
 
   const tasksByStatus = KANBAN_COLS.reduce((acc,col)=>{
@@ -2169,7 +2174,7 @@ function MobileProjectList({projects, onSelect}) {
         />
       </div>
       {filtered.map(p => {
-        const tasks = (p.activities||[]).flatMap(a=>a.tasks);
+        const tasks = (p.activities||[]).flatMap(a=>a.tasks.filter(isTaskActive));
         const done = tasks.filter(t=>t.estado==="Completado").length;
         const pct = tasks.length>0 ? Math.round(done/tasks.length*100) : 0;
         const color = pct===100?"#1a7a4a":pct>=50?"#1a5f6e":"#b7620a";
@@ -2455,7 +2460,7 @@ function App({onSignOut, userEmail, accessToken}) {
   const deleteTask=(aid,tid)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:a.tasks.filter(t=>t.id!==tid)}:a));
 
   const selProj=projects.find(p=>p.id===selId&&!p.archived);
-  const allTasks=(selProj?.activities||[]).flatMap(a=>a.tasks);
+  const allTasks=(selProj?.activities||[]).flatMap(a=>a.tasks).filter(isTaskActive);
   const stats=allTasks.reduce((acc,t)=>{acc[t.estado]=(acc[t.estado]||0)+1;return acc;},{});
 
   const filteredActs=(selProj?.activities||[]).map(a=>{
@@ -2540,6 +2545,7 @@ function App({onSignOut, userEmail, accessToken}) {
               {showGlobalResults&&globalSearch.length>1&&(()=>{
                 const q=globalSearch.toLowerCase();
                 const results=projects.flatMap(p=>(p.activities||[]).flatMap(a=>a.tasks
+                  .filter(isTaskActive)
                   .filter(t=>t.tarea.toLowerCase().includes(q)||(t.responsable||"").toLowerCase().includes(q))
                   .map(t=>({...t,projName:p.name,projId:p.id,actName:a.name}))
                 )).slice(0,10);
