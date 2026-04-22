@@ -134,6 +134,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .task-name{font-weight:500;color:var(--ink);line-height:1.3}
 .task-desc-preview{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .prio-badge{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;font-size:10.5px;font-weight:700}
+.complete-btn{background:var(--green-lt);color:var(--green);border:1px solid var(--green);border-radius:50%;width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;cursor:pointer;transition:all 0.15s;padding:0;line-height:1}
+.complete-btn:hover{background:var(--green);color:#fff;transform:scale(1.1)}
 .prio-1{background:var(--red-lt);color:var(--red)}.prio-2{background:var(--amber-lt);color:var(--amber)}
 .prio-3{background:var(--bg2);color:var(--ink3)}
 .status-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap}
@@ -690,8 +692,9 @@ const emailToName = (email) => {
 const today = () => new Date().toISOString().slice(0,10);
 const fmtDate = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return `${day}/${m}/${y}`; };
 const isOverdue = d => d && d < today();
-const STATUS_OPTS = ["Pendiente","En Proceso","Completado","Bloqueado"];
-const STATUS_CLASS = {"Pendiente":"s-pending","En Proceso":"s-inprogress","Completado":"s-done","Bloqueado":"s-blocked"};
+const STATUS_OPTS = ["Pendiente","Completado"];
+// Incluye mapeo de estados legacy por si aparecen datos viejos — se muestran pero no se pueden elegir
+const STATUS_CLASS = {"Pendiente":"s-pending","Completado":"s-done","En Proceso":"s-pending","Bloqueado":"s-pending"};
 const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
 const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
 
@@ -902,7 +905,7 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName}) {
   const [open,setOpen]=useState(false);
   const [form,setForm]=useState({...task,log:task.log||[]});
   const [newLogDate,setNewLogDate]=useState(today());
@@ -945,6 +948,24 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog}) {
   const cancelEditLog=()=>setEditingLogId(null);
   const lastLog=form.log.length>0?form.log[form.log.length-1]:null;
   const overdue=isOverdue(task.fechaTerminoE)&&task.estado!=="Completado";
+  const handleQuickComplete=(e)=>{
+    e.stopPropagation();
+    const t=today();
+    const name=(currentUserName||"").trim();
+    const completed={
+      ...task,
+      responsable:name||task.responsable,
+      fechaInicioE:t,
+      fechaTerminoE:t,
+      fechaTerminoR:t,
+      duracion:"0",
+      estado:"Completado",
+    };
+    const desc=`Tarea "${task.tarea}" completada rápido por ${name||"usuario"} (${t})`;
+    onUpdate(actId,completed,desc);
+    if(onAuditLog)onAuditLog("tarea_completada",desc);
+    setForm(completed);
+  };
   return (
     <div className="task-row-wrap">
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
@@ -962,7 +983,12 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog}) {
           </div>
           {lastLog&&<div className="task-desc-preview">{fmtDate(lastLog.date)} — {lastLog.text}</div>}
         </div>
-        <div className="td" style={{textAlign:"center"}}><span className={`prio-badge prio-${normPrio(task.prioridad)}`}>{normPrio(task.prioridad)}</span></div>
+        <div className="td" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+          <span className={`prio-badge prio-${normPrio(task.prioridad)}`}>{normPrio(task.prioridad)}</span>
+          {task.estado!=="Completado"&&(
+            <button onClick={handleQuickComplete} className="complete-btn" title="Completar rápido: fechas = hoy, responsable = tú, estado = Completado">✓</button>
+          )}
+        </div>
         <div className="td"><span className={`status-chip ${STATUS_CLASS[task.estado]||"s-pending"}`}>{task.estado}</span></div>
         <div className="td td-date"><div className="date-label">Inicio</div>{fmtDate(task.fechaInicioE)}</div>
         <div className="td td-date"><div className="date-label">Término</div><span className={overdue?"date-overdue":""}>{fmtDate(task.fechaTerminoE)}</span></div>
@@ -1105,7 +1131,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog}) {
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog,currentUserName}) {
   const [collapsed,setCollapsed]=useState(true);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
@@ -1148,7 +1174,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
           {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog}/>
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -2591,9 +2617,7 @@ function App({onSignOut, userEmail, accessToken}) {
             {selProj&&(
               <>
                 <div className="stat-pills">
-                  {stats["En Proceso"]>0&&<span style={{color:"var(--teal)",fontWeight:600,fontSize:12}}>{stats["En Proceso"]} en proceso</span>}
                   {stats["Completado"]>0&&<span style={{color:"var(--green)",fontWeight:600,fontSize:12}}>{stats["Completado"]} ✓</span>}
-                  {stats["Bloqueado"]>0&&<span style={{color:"var(--red)",fontWeight:600,fontSize:12}}>{stats["Bloqueado"]} bloqueadas</span>}
                   {stats["Pendiente"]>0&&<span style={{color:"var(--ink3)",fontWeight:600,fontSize:12}}>{stats["Pendiente"]} pendientes</span>}
                 </div>
                 <button className="btn btn-outline btn-sm" onClick={()=>setShowApplySipoc(true)} title="Reemplaza todas las actividades con la plantilla SIPOC">🔄 Aplicar SIPOC</button>
@@ -2621,7 +2645,6 @@ function App({onSignOut, userEmail, accessToken}) {
             <>
               <div className="proj-tabs">
                 <button className={"proj-tab"+(activeTab==="actividades"?" active":"")} onClick={()=>setActiveTab("actividades")}>📋 Actividades</button>
-                <button className={"proj-tab proj-tab-kanban"+(activeTab==="kanban"?" active":"")} onClick={()=>setActiveTab("kanban")}>🗂 Kanban</button>
                 <button className={"proj-tab proj-tab-timeline"+(activeTab==="timeline"?" active":"")} onClick={()=>setActiveTab("timeline")}>📅 Línea de Tiempo</button>
                 <button className={"proj-tab"+(activeTab==="informe"?" active":"")} onClick={()=>setActiveTab("informe")}>📄 Informe</button>
               </div>
@@ -2662,14 +2685,11 @@ function App({onSignOut, userEmail, accessToken}) {
                         out.push(<div key={`sec-${sec}`} className="sipoc-section-header"><span className="sipoc-section-letter">{sec}</span><span className="sipoc-section-title">{SIPOC_SECTIONS[sec]}</span></div>);
                         lastSec=sec;
                       }
-                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit}/>);
+                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)}/>);
                     });
                     return out;
                   })()}
                 </>
-              )}
-              {activeTab==="kanban"&&(
-                <KanbanView project={selProj} onUpdateTask={updateTask} onAuditLog={logAudit}/>
               )}
               {activeTab==="timeline"&&(
                 <TimelineView project={selProj}/>
