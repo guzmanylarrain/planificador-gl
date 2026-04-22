@@ -916,7 +916,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
     const missing=[];
     if(!form.responsable)missing.push("Responsable");
     if(!form.tipo)missing.push("Tipo");
-    if(!form.duracion&&!form.fechaTerminoE)missing.push("Duración o Fecha Término");
+    if(form.tipo!=="R"&&!form.duracion&&!form.fechaTerminoE)missing.push("Duración o Fecha Término");
     if(!form.fechaInicioE)missing.push("Fecha Inicio");
     if(missing.length>0){setSaveError("Campos obligatorios: "+missing.join(", "));return;}
     setSaveError("");
@@ -974,8 +974,8 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {task.tipo&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:18,height:18,borderRadius:"50%",fontSize:10,fontWeight:800,flexShrink:0,background:task.tipo==="T"?"rgba(26,122,74,0.12)":"rgba(192,57,43,0.12)",color:task.tipo==="T"?"#1a7a4a":"#c0392b",border:`1.5px solid ${task.tipo==="T"?"#1a7a4a":"#c0392b"}`}}>{task.tipo}</span>}
             <div className="task-name">{task.tarea}</div>
-            {(!task.responsable||!task.tipo||(!task.duracion&&!task.fechaTerminoE)||!task.fechaInicioE)&&(
-              <span title={`Info incompleta: ${[!task.responsable?"responsable":null,!task.tipo?"tipo":null,(!task.duracion&&!task.fechaTerminoE)?"duración o fecha término":null,!task.fechaInicioE?"fecha inicio":null].filter(Boolean).join(", ")}`}
+            {(!task.responsable||!task.tipo||(task.tipo!=="R"&&!task.duracion&&!task.fechaTerminoE)||!task.fechaInicioE)&&(
+              <span title={`Info incompleta: ${[!task.responsable?"responsable":null,!task.tipo?"tipo":null,(task.tipo!=="R"&&!task.duracion&&!task.fechaTerminoE)?"duración o fecha término":null,!task.fechaInicioE?"fecha inicio":null].filter(Boolean).join(", ")}`}
                 style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:10,fontWeight:700,color:"#c0392b",background:"rgba(192,57,43,0.1)",border:"1px solid rgba(192,57,43,0.25)",borderRadius:4,padding:"1px 5px",flexShrink:0,whiteSpace:"nowrap"}}>
                 ⚠ Incompleta
               </span>
@@ -1030,6 +1030,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
                 <option value="R">R — Restricción</option>
               </select>
             </div>
+            {form.tipo!=="R"&&(
             <div className="detail-field">
               <div className="detail-label" style={{color:(!form.duracion&&!form.fechaTerminoE)?"var(--red)":"var(--ink3)"}}>Duración (días) {(!form.duracion&&!form.fechaTerminoE)&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
               <input className="detail-input" type="number" min="0" value={form.duracion||""} onChange={e=>{
@@ -1041,6 +1042,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
                 });
               }}/>
             </div>
+            )}
             <div className="detail-field">
               <div className="detail-label" style={{color:!form.fechaInicioE?"var(--red)":"var(--ink3)"}}>Fecha Inicio (E) {!form.fechaInicioE&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
               <input className="detail-input" type="date" value={form.fechaInicioE||""} onChange={e=>{
@@ -1059,6 +1061,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
                 });
               }}/>
             </div>
+            {form.tipo!=="R"&&(
             <div className="detail-field">
               <div className="detail-label" style={{color:(!form.duracion&&!form.fechaTerminoE)?"var(--red)":"var(--ink3)"}}>Fecha Término (E) {(!form.duracion&&!form.fechaTerminoE)&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
               <input className="detail-input" type="date" value={form.fechaTerminoE||""} onChange={e=>{
@@ -1072,6 +1075,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
                 });
               }}/>
             </div>
+            )}
             <div className="detail-field">
               <div className="detail-label">Fecha Término Real</div>
               <input className="detail-input" type="date" value={form.fechaTerminoR||""} onChange={e=>{const v=e.target.value;setForm(f=>({...f,fechaTerminoR:v,...(v&&f.estado!=="Completado"?{estado:"Completado"}:{})}));}}/>
@@ -1625,7 +1629,7 @@ function InformeView({project}) {
   const [soloIS, setSoloIS] = useState(false);
   const [filterResp, setFilterResp] = useState([]);
   const [filterTipo, setFilterTipo] = useState([]);
-  const [filterStatus, setFilterStatus] = useState([]);
+  const [filterStatus, setFilterStatus] = useState(["Pendiente"]);
   const today=new Date().toISOString().slice(0,10);
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
