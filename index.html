@@ -916,8 +916,19 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName,highlightTaskId}) {
   const [open,setOpen]=useState(false);
+  const rowRef=React.useRef(null);
+  // Si esta tarea coincide con el highlight, abre detalle y scrollea
+  useEffect(()=>{
+    if(highlightTaskId&&task.id===highlightTaskId){
+      setOpen(true);
+      const t=setTimeout(()=>{
+        if(rowRef.current)rowRef.current.scrollIntoView({behavior:"smooth",block:"center"});
+      },180);
+      return ()=>clearTimeout(t);
+    }
+  },[highlightTaskId,task.id]);
   const [form,setForm]=useState({...task,log:task.log||[]});
   const [newLogDate,setNewLogDate]=useState(today());
   const [newLogText,setNewLogText]=useState("");
@@ -978,7 +989,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
     setForm(completed);
   };
   return (
-    <div className="task-row-wrap">
+    <div className="task-row-wrap" ref={rowRef}>
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
         <div className="td td-num">{globalIdx}</div>
         <div className="td">
@@ -1146,12 +1157,18 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog,currentUserName}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog,currentUserName,highlightTaskId}) {
   const [collapsed,setCollapsed]=useState(true);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
   const [nameVal,setNameVal]=useState(activity.name);
+  // Si una de las tareas tiene highlight, expandir esta actividad
+  useEffect(()=>{
+    if(highlightTaskId&&(activity.tasks||[]).some(t=>t.id===highlightTaskId)){
+      setCollapsed(false);
+    }
+  },[highlightTaskId,activity.tasks]);
   const confirmAdd=()=>{
     if(!newTaskName.trim())return setAddingTask(false);
     onAddTask(activity.id,newTaskName.trim());
@@ -1193,7 +1210,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
           {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName}/>
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName} highlightTaskId={highlightTaskId}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -1891,7 +1908,7 @@ function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff}) {
   );
 }
 
-function DashboardView({projects, onSelectProject}) {
+function DashboardView({projects, onSelectProject, onSelectTask}) {
   const [filterCity, setFilterCity] = useState("all");
   const [selectedProjs, setSelectedProjs] = useState([]);
   const [filterResp, setFilterResp] = useState("all");
@@ -2017,7 +2034,7 @@ function DashboardView({projects, onSelectProject}) {
           <h4>Tareas más atrasadas</h4>
           {overdueTasks.length===0?<p style={{color:"var(--ink3)",fontSize:12,textAlign:"center",padding:20}}>✅ Sin tareas atrasadas</p>:
           overdueTasks.map((t,i)=>(
-            <div key={i} className="dash-overdue-row" onClick={()=>onSelectProject(t.projId)}>
+            <div key={i} className="dash-overdue-row" onClick={()=>onSelectTask(t.projId,t.id)}>
               <span className="dash-overdue-days">{daysDiff(t.fechaTerminoE)}</span>
               <div className="dash-overdue-info">
                 <div className="dash-overdue-task">{t.tarea}</div>
@@ -2037,7 +2054,7 @@ function DashboardView({projects, onSelectProject}) {
             const bg=diff<=7?"var(--red-lt)":diff<=14?"rgba(230,160,0,0.12)":"rgba(20,160,180,0.1)";
             const col=diff<=7?"var(--red)":diff<=14?"var(--amber)":"var(--teal)";
             return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectTask(t.projId,t.id)}>
                 <span className="dash-upcoming-badge" style={{background:bg,color:col}}>{daysUntil(t.fechaTerminoE)}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
@@ -2056,7 +2073,7 @@ function DashboardView({projects, onSelectProject}) {
               const isOverdueIS=t.fechaTerminoE&&t.fechaTerminoE<today;
               const badge=isOverdueIS?{bg:"var(--red-lt)",col:"var(--red)",label:"⚠ Atrasado"}:{bg:"rgba(20,160,180,0.12)",col:"var(--teal)",label:t.estado};
               return(
-              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectProject(t.projId)}>
+              <div key={i} className="dash-upcoming-row" onClick={()=>onSelectTask(t.projId,t.id)}>
                 <span className="dash-upcoming-badge" style={{background:badge.bg,color:badge.col}}>{badge.label}</span>
                 <div className="dash-overdue-info">
                   <div className="dash-overdue-task">{t.tarea}</div>
@@ -2263,6 +2280,7 @@ function App({onSignOut, userEmail, accessToken}) {
   const [showNewProj,setShowNewProj]=useState(false);
   const [showNewAct,setShowNewAct]=useState(false);
   const [showApplySipoc,setShowApplySipoc]=useState(false);
+  const [highlightTaskId,setHighlightTaskId]=useState(null);
   const [showChangePw,setShowChangePw]=useState(false);
   const [changePwNew,setChangePwNew]=useState("");
   const [changePwConfirm,setChangePwConfirm]=useState("");
@@ -2648,7 +2666,7 @@ function App({onSignOut, userEmail, accessToken}) {
         </div>
         <div className="content" style={showDashboard?{padding:0}:{}}>
           {showDashboard?(
-            <DashboardView projects={projects.filter(p=>!p.archived)} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}}/>
+            <DashboardView projects={projects.filter(p=>!p.archived)} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowDashboard(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
@@ -2705,7 +2723,7 @@ function App({onSignOut, userEmail, accessToken}) {
                         out.push(<div key={`sec-${sec}`} className="sipoc-section-header"><span className="sipoc-section-letter">{sec}</span><span className="sipoc-section-title">{SIPOC_SECTIONS[sec]}</span></div>);
                         lastSec=sec;
                       }
-                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)}/>);
+                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId}/>);
                     });
                     return out;
                   })()}
