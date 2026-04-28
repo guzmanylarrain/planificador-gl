@@ -916,16 +916,17 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName,highlightTaskId}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed}) {
   const [open,setOpen]=useState(false);
   const rowRef=React.useRef(null);
-  // Si esta tarea coincide con el highlight, abre detalle y scrollea
+  // Si esta tarea coincide con el highlight, abre detalle, scrollea y limpia highlight (one-shot)
   useEffect(()=>{
     if(highlightTaskId&&task.id===highlightTaskId){
       setOpen(true);
       const t=setTimeout(()=>{
         if(rowRef.current)rowRef.current.scrollIntoView({behavior:"smooth",block:"center"});
-      },180);
+        if(onHighlightConsumed)onHighlightConsumed();
+      },220);
       return ()=>clearTimeout(t);
     }
   },[highlightTaskId,task.id]);
@@ -1157,7 +1158,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog,currentUserName,highlightTaskId}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed}) {
   const [collapsed,setCollapsed]=useState(true);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
@@ -1210,7 +1211,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
           </div>
           {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
           {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName} highlightTaskId={highlightTaskId}/>
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName} highlightTaskId={highlightTaskId} onHighlightConsumed={onHighlightConsumed}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -2723,7 +2724,7 @@ function App({onSignOut, userEmail, accessToken}) {
                         out.push(<div key={`sec-${sec}`} className="sipoc-section-header"><span className="sipoc-section-letter">{sec}</span><span className="sipoc-section-title">{SIPOC_SECTIONS[sec]}</span></div>);
                         lastSec=sec;
                       }
-                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId}/>);
+                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)}/>);
                     });
                     return out;
                   })()}
