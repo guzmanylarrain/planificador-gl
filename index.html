@@ -492,42 +492,44 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 /* ── INFORME TABLE ── */
 .inf-tbl{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--white);box-shadow:var(--shadow)}
 .inf-tbl-head,.inf-tbl-row{display:grid;grid-template-columns:minmax(220px,1.8fr) 50px minmax(220px,2fr) 140px 115px 115px;gap:0;align-items:center}
-.inf-tbl-head{background:var(--ink);color:#c0bdb6;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:0}
-.inf-tbl-head > div{padding:10px 12px;border-right:1px solid rgba(255,255,255,0.08)}
+.inf-tbl-head{background:var(--ink);color:#c0bdb6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.3px;padding:0}
+.inf-tbl-head > div{padding:12px 14px;border-right:1px solid rgba(255,255,255,0.08)}
 .inf-tbl-head > div:last-child{border-right:none}
 .inf-act-group{border-top:1px solid var(--line)}
 .inf-act-group:first-of-type{border-top:none}
-.inf-act-hdr{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--bg2);cursor:pointer;user-select:none;border-top:1px solid var(--line);transition:background 0.12s}
+.inf-act-hdr{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--bg2);cursor:pointer;user-select:none;border-top:1px solid var(--line);transition:background 0.12s}
 .inf-act-hdr:hover{background:#e4e1da}
 .inf-act-arrow{font-size:9px;color:var(--ink3);transition:transform 0.15s;width:10px;flex-shrink:0}
 .inf-act-arrow.open{transform:rotate(90deg)}
-.inf-act-name{font-size:12.5px;font-weight:700;color:var(--ink);flex:1;letter-spacing:0.2px}
-.inf-act-count{font-size:10.5px;background:rgba(0,0,0,0.08);color:var(--ink2);padding:2px 9px;border-radius:10px;font-weight:700}
-.inf-act-overdue{font-size:10.5px;color:var(--red);font-weight:700;background:var(--red-lt);padding:2px 9px;border-radius:10px}
-.inf-tbl-row{font-size:12.5px;color:var(--ink);background:var(--white);border-top:1px solid var(--line);border-left:3px solid transparent;transition:background 0.12s}
+.inf-act-name{font-size:14px;font-weight:700;color:var(--ink);flex:1;letter-spacing:0.2px}
+.inf-act-count{font-size:11px;background:rgba(0,0,0,0.08);color:var(--ink2);padding:2px 10px;border-radius:10px;font-weight:700}
+.inf-act-overdue{font-size:11px;color:var(--red);font-weight:700;background:var(--red-lt);padding:2px 10px;border-radius:10px}
+.inf-tbl-row{font-size:13.5px;color:var(--ink);background:var(--white);border-top:1px solid var(--line);border-left:3px solid transparent;transition:background 0.12s}
 .inf-tbl-row:hover{background:var(--bg)}
 .inf-tbl-row.overdue{background:#fdf5f3}
 .inf-tbl-row.overdue:hover{background:#fbe9e5}
 .inf-tbl-row.soon{background:#fefaf2}
-.inf-tbl-row > div{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
-.inf-tbl-tarea{font-weight:600;color:var(--ink);word-break:break-word;white-space:normal}
+.inf-tbl-row > div{padding:11px 14px;overflow:hidden;text-overflow:ellipsis;line-height:1.45}
+.inf-tbl-tarea{font-weight:600;color:var(--ink);word-break:break-word;white-space:normal;font-size:13.5px}
+.inf-tbl-tarea.clickable{cursor:pointer;transition:color 0.15s}
+.inf-tbl-tarea.clickable:hover{color:var(--teal)}
 .inf-tbl-tarea.no-resp{color:var(--ink3)}
 .inf-tbl-tipo{text-align:center}
-.inf-tbl-tipo-badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;min-width:22px}
+.inf-tbl-tipo-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;min-width:22px}
 .inf-tbl-tipo-T{background:#eaf6f0;color:var(--green)}
 .inf-tbl-tipo-R{background:var(--red-lt);color:var(--red)}
 .inf-tbl-tipo-empty{background:var(--bg2);color:var(--ink3)}
-.inf-tbl-desc{font-size:11.5px;color:var(--ink2);line-height:1.4;white-space:normal;word-break:break-word}
-.inf-tbl-desc-date{font-size:10px;color:var(--ink3);font-weight:700;margin-right:6px}
+.inf-tbl-desc{font-size:12.5px;color:var(--ink2);line-height:1.45;white-space:normal;word-break:break-word}
+.inf-tbl-desc-date{font-size:10.5px;color:var(--ink3);font-weight:700;margin-right:6px}
 .inf-tbl-desc-empty{color:var(--ink3);font-style:italic}
-.inf-tbl-desc-more{background:none;border:none;color:var(--teal);font-weight:700;font-size:10.5px;cursor:pointer;padding:2px 0;margin-top:3px;display:block}
-.inf-tbl-resp{font-size:12px;color:var(--ink2);font-weight:600}
-.inf-tbl-date{font-size:12px;color:var(--ink2);font-weight:600}
+.inf-tbl-desc-more{background:none;border:none;color:var(--teal);font-weight:700;font-size:11px;cursor:pointer;padding:3px 0;margin-top:4px;display:block}
+.inf-tbl-resp{font-size:13px;color:var(--ink2);font-weight:600}
+.inf-tbl-date{font-size:13px;color:var(--ink2);font-weight:600}
 .inf-tbl-date.overdue{color:var(--red);font-weight:700}
 .inf-tbl-date.soon{color:var(--amber);font-weight:700}
-.inf-tbl-date-sub{font-size:10px;color:var(--ink3);font-weight:500;display:block;margin-top:1px}
+.inf-tbl-date-sub{font-size:10.5px;color:var(--ink3);font-weight:500;display:block;margin-top:2px}
 .inf-tbl-date.overdue .inf-tbl-date-sub{color:var(--red)}
-.inf-tbl-estado-pill{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:10px;text-align:center}
+.inf-tbl-estado-pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;text-align:center}
 .inf-tbl-logs{grid-column:1/-1;padding:10px 16px 12px 16px;background:var(--bg);border-top:1px dashed var(--line);font-size:11.5px;color:var(--ink2);line-height:1.5}
 .inf-tbl-logs-item{padding:4px 0;border-bottom:1px dashed rgba(0,0,0,0.06)}
 .inf-tbl-logs-item:last-child{border-bottom:none}
@@ -1902,7 +1904,7 @@ function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
   return(
     <>
       <div className={rowCls} style={{borderLeftColor:PRIO_COLORS[prio]}}>
-        <div className="inf-tbl-tarea" onClick={onSelectTask?(()=>onSelectTask(t.id)):undefined} style={onSelectTask?{cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(0,0,0,0.15)",textUnderlineOffset:3}:{}} title={onSelectTask?"Ver/editar en Actividades":""}>{t.tarea}</div>
+        <div className={"inf-tbl-tarea"+(onSelectTask?" clickable":"")} onClick={onSelectTask?(()=>onSelectTask(t.id)):undefined} title={onSelectTask?"Ver/editar en Actividades":""}>{t.tarea}</div>
         <div className="inf-tbl-tipo"><span className={"inf-tbl-tipo-badge "+tipoCls}>{t.tipo||"—"}</span></div>
         <div className="inf-tbl-desc">
           {lastLog?(
