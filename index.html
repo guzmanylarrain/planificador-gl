@@ -459,9 +459,9 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .multiselect-sep{height:1px;background:var(--line);margin:4px 0}
 
 /* ── INFORME VIEW ── */
-.inf-wrap{padding:28px 32px 48px;overflow-y:auto;height:100%}
-.inf-header{margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid var(--teal)}
-.inf-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+.inf-wrap{padding:22px 32px 48px;overflow-y:auto;height:100%}
+.inf-header{margin-bottom:18px;padding-bottom:14px;border-bottom:3px solid var(--teal)}
+.inf-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:0}
 .inf-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
 .inf-title{font-size:24px;font-weight:700;color:var(--ink);line-height:1.2;font-family:'Libre Baskerville',serif}
 .inf-subtitle{font-size:13px;color:var(--ink3);margin-top:5px}
@@ -1783,7 +1783,15 @@ function InformeView({project, onSelectTask}) {
         <div className="inf-header-top">
           <div>
             <div className="inf-eyebrow" style={{color:project.color}}>Informe de Estado</div>
-            <div className="inf-title">{projShortName}</div>
+            <div className="inf-title" style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              <span>{projShortName}</span>
+              <span style={{fontSize:13,fontWeight:600,fontFamily:"'IBM Plex Sans',sans-serif",background:"var(--bg)",border:"1px solid var(--line)",borderRadius:14,padding:"4px 12px",color:"var(--ink2)",letterSpacing:0.2}}>
+                <span style={{color:"var(--teal)",fontWeight:700}}>{total}</span>
+                {" "}
+                {total===1?"tarea crítica":"tareas críticas"}
+                {atrasadas.length>0&&<span style={{color:"var(--red)",fontWeight:700,marginLeft:8}}>· {atrasadas.length} atrasada{atrasadas.length===1?"":"s"}</span>}
+              </span>
+            </div>
             <div className="inf-subtitle">{dateStr} · {project.name.split(" - ")[0]}</div>
           </div>
           <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
@@ -1812,15 +1820,6 @@ function InformeView({project, onSelectTask}) {
             </button>
           </div>
         </div>
-        <div className="inf-kpis">
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{total}</div><div className="inf-kpi-label">Tareas críticas</div></div>
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:pctColor}}>{pct}%</div><div className="inf-kpi-label">Avance críticas</div></div>
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--green)"}}>{done}</div><div className="inf-kpi-label">Completadas</div></div>
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--teal)"}}>{enCurso.length}</div><div className="inf-kpi-label">En curso</div></div>
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--red)"}}>{atrasadas.length}</div><div className="inf-kpi-label">Atrasadas</div></div>
-          <div className="inf-kpi"><div className="inf-kpi-val" style={{color:"var(--ink3)"}}>{pendientes.length}</div><div className="inf-kpi-label">Pendientes</div></div>
-        </div>
-        <div className="inf-progress-bar"><div className="inf-progress-fill" style={{width:pct+"%",background:pctColor}}/></div>
       </div>
 
       {(()=>{
