@@ -1864,7 +1864,7 @@ function InformeView({project, onSelectTask}) {
               <div>Fecha Término (E)</div>
               <div>Estado</div>
             </div>
-            {groups.map(g=><InfActGroup key={g.actName} group={g} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff}/>)}
+            {groups.map(g=><InfActGroup key={g.actName} group={g} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask}/>)}
           </div>
         );
       })()}
@@ -1872,7 +1872,7 @@ function InformeView({project, onSelectTask}) {
   );
 }
 
-function InfActGroup({group,today,sevenStr,fmtDate,daysDiff}) {
+function InfActGroup({group,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
   const [open,setOpen]=React.useState(true);
   const overdueCount=group.tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length;
   return(
