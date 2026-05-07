@@ -689,7 +689,10 @@ class SupabaseClient {
 }
 
 let db = null;
-const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+// Genera un ID único para cada tarea/log/etc. Antes solo tenía 3 caracteres random
+// y colisionaba al crear muchas tareas en el mismo milisegundo (ej. al aplicar SIPOC).
+// Ahora usa timestamp + 22 caracteres random → probabilidad de colisión negligible.
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,13) + Math.random().toString(36).slice(2,13);
 const emailToName = (email) => {
   if(!email) return "Usuario";
   const local = email.split("@")[0];
@@ -989,6 +992,28 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
     if(onAuditLog)onAuditLog("tarea_completada",desc);
     setForm(completed);
   };
+  const handleReset=()=>{
+    if(!confirm(`¿Resetear "${task.tarea}" a su estado original?\n\nEsto borrará: fechas, responsable, prioridad, estado y bitácora. La tarea quedará como recién creada.\n\nEsta acción no se puede deshacer.`))return;
+    const reset={
+      id:task.id,
+      tarea:task.tarea,
+      tipo:task.tipo||"",
+      prioridad:3,
+      informeSocio:false,
+      estado:"Pendiente",
+      responsable:"",
+      duracion:"",
+      fechaInicioE:"",
+      fechaTerminoE:"",
+      fechaTerminoR:"",
+      log:[],
+    };
+    const desc=`Tarea "${task.tarea}" reseteada a estado original`;
+    onUpdate(actId,reset,desc);
+    if(onAuditLog)onAuditLog("tarea_reseteada",desc);
+    setForm(reset);
+    setOpen(false);
+  };
   return (
     <div className="task-row-wrap" ref={rowRef}>
       <div className={`task-row${open?" expanded":""}`} onClick={()=>setOpen(o=>!o)}>
@@ -1143,8 +1168,11 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
           </div>
           <div className="detail-actions" style={{flexDirection:"column",gap:8}}>
             {saveError&&<div style={{background:"var(--red-lt)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:6,padding:"7px 11px",fontSize:12,color:"var(--red)",width:"100%"}}>{saveError}</div>}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%"}}>
-              <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("¿Eliminar esta tarea?"))onDelete(actId,task.id);}}>🗑 Eliminar</button>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",flexWrap:"wrap",gap:7}}>
+              <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("¿Eliminar esta tarea?"))onDelete(actId,task.id);}}>🗑 Eliminar</button>
+                <button className="btn btn-outline btn-sm" onClick={handleReset} title="Dejar la tarea como recién creada (sin fechas, responsable, etc.)">↻ Resetear</button>
+              </div>
               <div style={{display:"flex",gap:7}}>
                 <button className="btn btn-outline btn-sm" onClick={()=>{setForm({...task,log:task.log||[]});setOpen(false);setSaveError("");}}>Cancelar</button>
                 <button className="btn btn-primary btn-sm" onClick={saveAndClose}>Guardar cambios</button>
@@ -1658,7 +1686,7 @@ function DonutChart({data}) {
   );
 }
 
-function InformeView({project}) {
+function InformeView({project, onSelectTask}) {
   const [soloIS, setSoloIS] = useState(false);
   const [filterResp, setFilterResp] = useState([]);
   const [filterTipo, setFilterTipo] = useState([]);
@@ -1855,12 +1883,12 @@ function InfActGroup({group,today,sevenStr,fmtDate,daysDiff}) {
         <span className="inf-act-count">{group.tasks.length} {group.tasks.length===1?"tarea":"tareas"}</span>
         {overdueCount>0&&<span className="inf-act-overdue">⏱ {overdueCount} atrasada{overdueCount===1?"":"s"}</span>}
       </div>
-      {open&&group.tasks.map(t=><InfTaskRow key={t.id} t={t} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff}/>)}
+      {open&&group.tasks.map(t=><InfTaskRow key={t.id} t={t} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask}/>)}
     </div>
   );
 }
 
-function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff}) {
+function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
   const [expand,setExpand]=React.useState(false);
   const isOver=t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today;
   const isSoon=!isOver&&t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<=sevenStr&&t.fechaTerminoE>=today;
@@ -1874,7 +1902,7 @@ function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff}) {
   return(
     <>
       <div className={rowCls} style={{borderLeftColor:PRIO_COLORS[prio]}}>
-        <div className="inf-tbl-tarea">{t.tarea}</div>
+        <div className="inf-tbl-tarea" onClick={onSelectTask?(()=>onSelectTask(t.id)):undefined} style={onSelectTask?{cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(0,0,0,0.15)",textUnderlineOffset:3}:{}} title={onSelectTask?"Ver/editar en Actividades":""}>{t.tarea}</div>
         <div className="inf-tbl-tipo"><span className={"inf-tbl-tipo-badge "+tipoCls}>{t.tipo||"—"}</span></div>
         <div className="inf-tbl-desc">
           {lastLog?(
@@ -2734,7 +2762,7 @@ function App({onSignOut, userEmail, accessToken}) {
                 <TimelineView project={selProj}/>
               )}
               {activeTab==="informe"&&(
-                <InformeView project={selProj}/>
+                <InformeView project={selProj} onSelectTask={(taskId)=>{setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
               )}
             </>
           )}
