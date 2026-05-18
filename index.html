@@ -4,9 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Planificador de Proyectos Inmobiliarios</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.4/babel.min.js" integrity="sha384-qVgGRi0TCdh+xrBD9+4kG0YlkbOkWu2J3CB46EekpYQmtM96n9v+uaKIS5ipaqKb" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -2466,11 +2466,22 @@ function App({onSignOut, userEmail, accessToken}) {
     updActs(selId,acts=>[...acts,{id:uid(),name:newActName.trim(),tasks:[]}]);
     setShowNewAct(false);setNewActName("");
   };
-  const applySipoc=()=>{
+  // Guarda un snapshot del proyecto ANTES de una acción destructiva (red de seguridad)
+  const saveSnapshot=async(action,proj)=>{
+    if(!proj||!db)throw new Error("Sin proyecto o sin conexión a la base de datos");
+    await db.insert("backup_snapshots",{action,project_name:proj.name,user_email:userEmail,project_data:proj});
+  };
+  const applySipoc=async()=>{
     if(!selId)return;
-    updActs(selId,()=>buildSipocActivities());
     const proj=projects.find(p=>p.id===selId);
-    if(proj)logAudit("aplicar_sipoc",`SIPOC aplicado al proyecto: "${proj.name}" (actividades reemplazadas)`,proj.name);
+    try{
+      if(proj)await saveSnapshot("aplicar_sipoc",proj);
+    }catch(e){
+      alert("⚠ No se pudo crear el respaldo de seguridad antes de aplicar SIPOC.\n\nPor seguridad, la acción fue CANCELADA (no se borró nada). Revisa tu conexión e intenta de nuevo.\n\nDetalle: "+(e.message||e));
+      return;
+    }
+    updActs(selId,()=>buildSipocActivities());
+    if(proj)logAudit("aplicar_sipoc",`SIPOC aplicado al proyecto: "${proj.name}" (actividades reemplazadas — respaldo guardado)`,proj.name);
     setShowApplySipoc(false);
   };
   const submitChangePw=async()=>{
@@ -2489,9 +2500,17 @@ function App({onSignOut, userEmail, accessToken}) {
     setChangePwLoading(false);
   };
   const closeChangePw=()=>{setShowChangePw(false);setChangePwNew("");setChangePwConfirm("");setChangePwError("");setChangePwSuccess(false);};
-  const deleteProject=(pid)=>{
+  const deleteProject=async(pid)=>{
+    const proj=projects.find(p=>p.id===pid);
+    try{
+      if(proj)await saveSnapshot("eliminar_proyecto",proj);
+    }catch(e){
+      alert("⚠ No se pudo crear el respaldo de seguridad antes de eliminar el proyecto.\n\nPor seguridad, la eliminación fue CANCELADA. Revisa tu conexión e intenta de nuevo.\n\nDetalle: "+(e.message||e));
+      return;
+    }
     const remaining=projects.filter(p=>p.id!==pid);
     updateProjects(remaining);
+    if(proj)logAudit("eliminar_proyecto",`Proyecto eliminado: "${proj.name}" (respaldo guardado)`,proj.name);
     if(selId===pid)setSelId(remaining.length>0?remaining[0].id:null);
   };
   const archiveProject=(pid)=>{
