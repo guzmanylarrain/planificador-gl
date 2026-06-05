@@ -1188,7 +1188,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,onDuplicateAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed,newActId,onNameEditConsumed}) {
   const [collapsed,setCollapsed]=useState(true);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
@@ -1200,6 +1200,10 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
       setCollapsed(false);
     }
   },[highlightTaskId,activity.tasks]);
+  // Si esta actividad recién se duplicó, abrir el nombre en modo edición
+  useEffect(()=>{
+    if(newActId&&newActId===activity.id){setEditingName(true);setCollapsed(false);onNameEditConsumed&&onNameEditConsumed();}
+  },[newActId,activity.id]);
   const confirmAdd=()=>{
     if(!newTaskName.trim())return setAddingTask(false);
     onAddTask(activity.id,newTaskName.trim());
@@ -1222,9 +1226,10 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
         ):<h3>{activity.name}</h3>}
         <span className="activity-count">{activity.tasks.length} tarea{activity.tasks.length!==1?"s":""}</span>
         <div className="act-actions" onClick={e=>e.stopPropagation()}>
-          <button className="act-icon-btn" onClick={()=>{setEditingName(true);setCollapsed(false);}}>✏️</button>
-          <button className="act-icon-btn" onClick={()=>{setAddingTask(true);setCollapsed(false);}}>+</button>
-          <button className="act-icon-btn del" onClick={()=>{if(confirm(`¿Eliminar "${activity.name}"?`))onDeleteAct(activity.id);}}>🗑</button>
+          <button className="act-icon-btn" title="Editar nombre" onClick={()=>{setEditingName(true);setCollapsed(false);}}>✏️</button>
+          <button className="act-icon-btn" title="Agregar tarea" onClick={()=>{setAddingTask(true);setCollapsed(false);}}>+</button>
+          <button className="act-icon-btn" title="Duplicar actividad" onClick={()=>onDuplicateAct(activity.id)}>⧉</button>
+          <button className="act-icon-btn del" title="Eliminar actividad" onClick={()=>{if(confirm(`¿Eliminar "${activity.name}"?`))onDeleteAct(activity.id);}}>🗑</button>
         </div>
       </div>
       {!collapsed&&(
@@ -2322,6 +2327,7 @@ function App({onSignOut, userEmail, accessToken}) {
   const [newProjCity,setNewProjCity]=useState("");
   const [newProjCustomCity,setNewProjCustomCity]=useState("");
   const [newActName,setNewActName]=useState("");
+  const [newActId,setNewActId]=useState(null);
   const [activeTab,setActiveTab]=useState("actividades");
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [showDashboard,setShowDashboard]=useState(false);
@@ -2523,6 +2529,17 @@ function App({onSignOut, userEmail, accessToken}) {
   };
   const renameAct=(aid,name)=>updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,name}:a));
   const deleteAct=(aid)=>updActs(selId,acts=>acts.filter(a=>a.id!==aid));
+  const duplicateAct=(aid)=>{
+    const newId=uid();
+    updActs(selId,acts=>{
+      const idx=acts.findIndex(a=>a.id===aid);
+      if(idx<0)return acts;
+      const orig=acts[idx];
+      const copy={id:newId,name:`${orig.name} (copia)`,tasks:(orig.tasks||[]).map(t=>({...t,id:uid(),log:(t.log||[]).map(l=>({...l,id:uid()}))}))};
+      return [...acts.slice(0,idx+1),copy,...acts.slice(idx+1)];
+    });
+    setNewActId(newId);
+  };
   const addTask=(aid,tarea)=>{
     const task={id:uid(),tarea,tipo:"",prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[]};
     updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:[task,...a.tasks]}:a));
@@ -2772,7 +2789,7 @@ function App({onSignOut, userEmail, accessToken}) {
                         out.push(<div key={`sec-${sec}`} className="sipoc-section-header"><span className="sipoc-section-letter">{sec}</span><span className="sipoc-section-title">{SIPOC_SECTIONS[sec]}</span></div>);
                         lastSec=sec;
                       }
-                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)}/>);
+                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} onDuplicateAct={duplicateAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)} newActId={newActId} onNameEditConsumed={()=>setNewActId(null)}/>);
                     });
                     return out;
                   })()}
