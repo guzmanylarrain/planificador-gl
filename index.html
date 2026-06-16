@@ -1042,7 +1042,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
         </div>
         <div className="td"><span className={`status-chip ${STATUS_CLASS[task.estado]||"s-pending"}`}>{task.estado}</span></div>
         <div className="td td-date"><div className="date-label">Inicio</div>{fmtDate(task.fechaInicioE)}</div>
-        <div className="td td-date"><div className="date-label">Término</div><span className={overdue?"date-overdue":""}>{fmtDate(task.fechaTerminoE)}</span></div>
+        <div className="td td-date"><div className="date-label">Término</div><span className={overdue?"date-overdue":""}>{fmtDate(task.tipo==="R"?task.fechaTerminoR:task.fechaTerminoE)}</span></div>
         <div className="td"><span style={{fontSize:12,color:"var(--ink2)"}}>{task.responsable||"—"}</span></div>
         <div className="td" style={{textAlign:"center"}}>{task.informeSocio&&<span title="Informe Socios" style={{fontSize:13,background:"rgba(var(--teal-rgb,20,160,180),0.15)",color:"var(--teal)",borderRadius:4,padding:"1px 6px",fontSize:11,fontWeight:600}}>📋 IS</span>}</div>
       </div>
