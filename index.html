@@ -2303,6 +2303,116 @@ function FilterMulti({options, selected, onChange, placeholder}) {
 }
 
 // ── MAIN APP ────────────────────────────────────────────────────────────────
+// ── DESARROLLO DEL PROYECTO (bitácora) ───────────────────────────────────────
+const DEV_CATS = [
+  {key:"general",  label:"General",   color:"#8a8780"},
+  {key:"hito",     label:"Hito",      color:"#27ae60"},
+  {key:"decision", label:"Decisión",  color:"#2980b9"},
+  {key:"problema", label:"Problema",  color:"#c0392b"},
+  {key:"pendiente",label:"Pendiente", color:"#e08e0b"},
+  {key:"reunion",  label:"Reunión",   color:"#8e44ad"},
+];
+const devCat = k => DEV_CATS.find(c=>c.key===k) || DEV_CATS[0];
+const devChip = (active,color) => ({border:"1px solid "+(active?color:"#ddd8d0"),background:active?color:"transparent",color:active?"#fff":"var(--ink2)",borderRadius:16,padding:"3px 12px",fontSize:12,cursor:"pointer",fontWeight:active?600:400,transition:"all 0.13s"});
+
+function DesarrolloView({project, currentUserName, onUpdate}) {
+  const entries = project.bitacora || [];
+  const [text,setText]=useState("");
+  const [cat,setCat]=useState("general");
+  const [filter,setFilter]=useState("");
+  const [editId,setEditId]=useState(null);
+  const [editText,setEditText]=useState("");
+  const [editCat,setEditCat]=useState("general");
+
+  const add=()=>{
+    if(!text.trim())return;
+    const d=new Date();
+    const date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const entry={id:uid(),date,author:currentUserName||"",category:cat,text:text.trim()};
+    onUpdate(list=>[entry,...list]);
+    setText("");setCat("general");
+  };
+  const remove=id=>{if(confirm("¿Eliminar esta anotación?"))onUpdate(list=>list.filter(e=>e.id!==id));};
+  const startEdit=e=>{setEditId(e.id);setEditText(e.text);setEditCat(e.category||"general");};
+  const saveEdit=()=>{if(editText.trim())onUpdate(list=>list.map(e=>e.id===editId?{...e,text:editText.trim(),category:editCat}:e));setEditId(null);};
+
+  const shown=filter?entries.filter(e=>(e.category||"general")===filter):entries;
+
+  return (
+    <div style={{maxWidth:880,margin:"0 auto",padding:"4px 2px 50px"}}>
+      <div style={{marginBottom:16}}>
+        <h2 style={{fontFamily:"Georgia,serif",fontSize:22,color:"var(--ink)",margin:"0 0 3px"}}>Desarrollo del Proyecto</h2>
+        <p style={{fontSize:13,color:"var(--ink3)",margin:0}}>Bitácora del proyecto: registra hitos, decisiones, problemas, reuniones y todo lo que vaya surgiendo durante el desarrollo.{entries.length>0&&<b style={{color:"var(--ink2)"}}>{" · "}{entries.length} anotación{entries.length!==1?"es":""}</b>}</p>
+      </div>
+
+      <div style={{background:"#fff",border:"1px solid #e6e2da",borderRadius:10,padding:14,marginBottom:18,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+        <textarea value={text} onChange={e=>setText(e.target.value)}
+          placeholder="Escribe una anotación...  (ej: Se aprobó el cambio de fachada en reunión con el arquitecto)"
+          onKeyDown={e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))add();}}
+          style={{width:"100%",minHeight:66,resize:"vertical",border:"1px solid #ddd8d0",borderRadius:7,padding:"9px 11px",fontSize:13.5,fontFamily:"inherit",color:"var(--ink)",outline:"none",boxSizing:"border-box"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginTop:10,flexWrap:"wrap"}}>
+          <span style={{fontSize:11,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:1,marginRight:2}}>Tipo:</span>
+          {DEV_CATS.map(c=>(
+            <button key={c.key} onClick={()=>setCat(c.key)} style={devChip(cat===c.key,c.color)}>{c.label}</button>
+          ))}
+          <button className="btn btn-primary btn-sm" style={{marginLeft:"auto"}} onClick={add} disabled={!text.trim()}>+ Agregar anotación</button>
+        </div>
+        <div style={{fontSize:10.5,color:"var(--ink3)",marginTop:7}}>Tip: Ctrl + Enter para agregar rápido.</div>
+      </div>
+
+      {entries.length>0&&(
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:13,flexWrap:"wrap"}}>
+          <span style={{fontSize:11,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:1,marginRight:2}}>Filtrar:</span>
+          <button onClick={()=>setFilter("")} style={devChip(filter==="","#8a8780")}>Todas</button>
+          {DEV_CATS.map(c=>(<button key={c.key} onClick={()=>setFilter(filter===c.key?"":c.key)} style={devChip(filter===c.key,c.color)}>{c.label}</button>))}
+        </div>
+      )}
+
+      {shown.length===0?(
+        <div style={{textAlign:"center",padding:"50px 20px",color:"var(--ink3)"}}>
+          <div style={{fontSize:34,marginBottom:8}}>📓</div>
+          <div style={{fontSize:14}}>{entries.length===0?"Aún no hay anotaciones. Empieza a registrar el desarrollo del proyecto.":"No hay anotaciones de este tipo."}</div>
+        </div>
+      ):(
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {shown.map(e=>{
+            const c=devCat(e.category);const editing=editId===e.id;
+            return (
+              <div key={e.id} style={{background:"#fff",border:"1px solid #e6e2da",borderLeft:"3px solid "+c.color,borderRadius:8,padding:"11px 13px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:6,flexWrap:"wrap"}}>
+                  <span style={{background:c.color,color:"#fff",borderRadius:5,padding:"2px 9px",fontSize:11,fontWeight:600}}>{c.label}</span>
+                  <span style={{fontSize:12,color:"var(--ink2)",fontWeight:600}}>📅 {e.date}</span>
+                  {e.author&&<span style={{fontSize:12,color:"var(--ink3)"}}>· {e.author}</span>}
+                  {!editing&&(
+                    <span style={{marginLeft:"auto",display:"flex",gap:4}}>
+                      <button className="btn btn-ghost btn-sm" onClick={()=>startEdit(e)} title="Editar">✏️</button>
+                      <button className="btn btn-ghost btn-sm" onClick={()=>remove(e.id)} title="Eliminar">🗑</button>
+                    </span>
+                  )}
+                </div>
+                {editing?(
+                  <div>
+                    <textarea value={editText} onChange={ev=>setEditText(ev.target.value)} style={{width:"100%",minHeight:60,resize:"vertical",border:"1px solid #ddd8d0",borderRadius:6,padding:"7px 9px",fontSize:13.5,fontFamily:"inherit",boxSizing:"border-box"}}/>
+                    <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap",alignItems:"center"}}>
+                      {DEV_CATS.map(cc=>(<button key={cc.key} onClick={()=>setEditCat(cc.key)} style={devChip(editCat===cc.key,cc.color)}>{cc.label}</button>))}
+                      <span style={{marginLeft:"auto",display:"flex",gap:6}}>
+                        <button className="btn btn-outline btn-sm" onClick={()=>setEditId(null)}>Cancelar</button>
+                        <button className="btn btn-primary btn-sm" onClick={saveEdit}>Guardar</button>
+                      </span>
+                    </div>
+                  </div>
+                ):(
+                  <div style={{fontSize:13.5,color:"var(--ink)",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{e.text}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App({onSignOut, userEmail, accessToken}) {
   const [projects,setProjects]=useState([]);
   const [selId,setSelId]=useState(null);
@@ -2424,6 +2534,7 @@ function App({onSignOut, userEmail, accessToken}) {
   },[]);
 
   const updateProjects=p=>{setProjects(p);saveProjects(p);};
+  const updBitacora=(pid,fn)=>updateProjects(projects.map(p=>p.id===pid?{...p,bitacora:fn(p.bitacora||[])}:p));
 
   const loadAuditLogs=useCallback(async()=>{
     if(!db)return;
@@ -2746,6 +2857,7 @@ function App({onSignOut, userEmail, accessToken}) {
             <>
               <div className="proj-tabs">
                 <button className={"proj-tab"+(activeTab==="actividades"?" active":"")} onClick={()=>setActiveTab("actividades")}>📋 Actividades</button>
+                <button className={"proj-tab"+(activeTab==="desarrollo"?" active":"")} onClick={()=>setActiveTab("desarrollo")}>📓 Desarrollo del Proyecto</button>
                 <button className={"proj-tab proj-tab-timeline"+(activeTab==="timeline"?" active":"")} onClick={()=>setActiveTab("timeline")}>📅 Línea de Tiempo</button>
                 <button className={"proj-tab"+(activeTab==="informe"?" active":"")} onClick={()=>setActiveTab("informe")}>📄 Informe</button>
               </div>
@@ -2791,6 +2903,9 @@ function App({onSignOut, userEmail, accessToken}) {
                     return out;
                   })()}
                 </>
+              )}
+              {activeTab==="desarrollo"&&(
+                <DesarrolloView project={selProj} currentUserName={emailToName(userEmail)} onUpdate={fn=>updBitacora(selId,fn)}/>
               )}
               {activeTab==="timeline"&&(
                 <TimelineView project={selProj}/>
