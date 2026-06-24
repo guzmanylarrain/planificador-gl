@@ -1699,7 +1699,8 @@ function InformeView({project, onSelectTask}) {
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
 
-  const allTasksRaw=(project.activities||[]).flatMap(a=>a.tasks.filter(isTaskActive).map(t=>({...t,actName:a.name})));
+  // Informe (reunión): mostramos prioridad 1-2 pendientes aunque NO tengan fecha (las plantilla vacías son prio 3, no entran).
+  const allTasksRaw=(project.activities||[]).flatMap(a=>a.tasks.map(t=>({...t,actName:a.name})));
   const allResponsables=[...new Set(allTasksRaw.map(t=>t.responsable).filter(Boolean))].sort();
 
   const filt=t=>{
