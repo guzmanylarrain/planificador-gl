@@ -837,7 +837,7 @@ function SetupScreen({onSetup}) {
 // ── CITY SIDEBAR ────────────────────────────────────────────────────────────
 function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProject}) {
   const activeProjects = projects.filter(p => !p.archived);
-  const archivedProjects = projects.filter(p => p.archived);
+  const archivedProjects = projects.filter(p => p.archived).sort((a,b)=>a.name.localeCompare(b.name,'es',{numeric:true}));
   // Por defecto todas las ciudades cerradas; una ciudad se abre solo al seleccionar/navegar a un proyecto suyo
   const [openCities, setOpenCities] = useState({});
   const [showArchived, setShowArchived] = useState(false);
@@ -859,6 +859,8 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
     if(!cityMap[city]) { cityMap[city] = []; cityOrder.push(city); }
     cityMap[city].push(p);
   }
+  // Orden alfabético de los proyectos dentro de cada ciudad (numérico: "Lote 2" antes que "Lote 10")
+  for(const city of cityOrder) cityMap[city].sort((a,b)=>getShortName(a.name).localeCompare(getShortName(b.name),'es',{numeric:true}));
 
   const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
 
