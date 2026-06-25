@@ -861,6 +861,9 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
   }
   // Orden alfabético de los proyectos dentro de cada ciudad (numérico: "Lote 2" antes que "Lote 10")
   for(const city of cityOrder) cityMap[city].sort((a,b)=>getShortName(a.name).localeCompare(getShortName(b.name),'es',{numeric:true}));
+  // Orden fijo de ciudades (norte a sur): Arica, Iquique, Antofagasta, Maipú; cualquier otra ciudad va alfabética al final
+  const CITY_ORDER = ["Arica","Iquique","Antofagasta","Maipú"];
+  cityOrder.sort((a,b)=>((CITY_ORDER.indexOf(a)<0?99:CITY_ORDER.indexOf(a))-(CITY_ORDER.indexOf(b)<0?99:CITY_ORDER.indexOf(b))) || a.localeCompare(b,'es'));
 
   const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
 
