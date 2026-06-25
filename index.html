@@ -1190,8 +1190,10 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,onDuplicateAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed,newActId,onNameEditConsumed}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,onDuplicateAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed,newActId,onNameEditConsumed,highlightActId,onActHighlightConsumed}) {
   const [collapsed,setCollapsed]=useState(true);
+  const groupRef=React.useRef(null);
+  const [actHighlighted,setActHighlighted]=useState(false);
   const [addingTask,setAddingTask]=useState(false);
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
@@ -1202,6 +1204,15 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
       setCollapsed(false);
     }
   },[highlightTaskId,activity.tasks]);
+  // Si esta actividad coincide con el highlight (click desde Línea de Tiempo): abrir, scrollear y resaltar brevemente
+  useEffect(()=>{
+    if(highlightActId&&activity.id===highlightActId){
+      setCollapsed(false); setActHighlighted(true);
+      const t1=setTimeout(()=>{if(groupRef.current)groupRef.current.scrollIntoView({behavior:"smooth",block:"start"});},60);
+      const t2=setTimeout(()=>{setActHighlighted(false);if(onActHighlightConsumed)onActHighlightConsumed();},1600);
+      return ()=>{clearTimeout(t1);clearTimeout(t2);};
+    }
+  },[highlightActId,activity.id]);
   // Si esta actividad recién se duplicó, abrir el nombre en modo edición
   useEffect(()=>{
     if(newActId&&newActId===activity.id){setEditingName(true);setCollapsed(false);onNameEditConsumed&&onNameEditConsumed();}
@@ -1217,7 +1228,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
   const activeTasks=actTasks.filter(isTaskActive);
   const actState=activeTasks.length===0?"empty":(activeTasks.every(t=>t.estado==="Completado")?"completed":"active");
   return (
-    <div className={"activity-group"+(actState==="completed"?" ag-completed":actState==="empty"?" ag-empty":"")}>
+    <div ref={groupRef} className={"activity-group"+(actState==="completed"?" ag-completed":actState==="empty"?" ag-empty":"")} style={actHighlighted?{boxShadow:"0 0 0 2px var(--teal)",borderRadius:8,transition:"box-shadow 0.3s"}:{transition:"box-shadow 0.3s"}}>
       <div className="activity-header" onClick={()=>!editingName&&setCollapsed(c=>!c)}>
         <span style={{color:"#888",fontSize:10,transform:collapsed?"":"rotate(90deg)",transition:"transform 0.2s",display:"inline-block"}}>▶</span>
         {actIdx&&<span style={{fontSize:11,color:"#666",background:"rgba(255,255,255,0.08)",borderRadius:4,padding:"1px 7px",flexShrink:0,fontFamily:"monospace"}}>{actIdx}</span>}
@@ -1296,7 +1307,7 @@ function datePx(date,startMs,totalMs,totalPx){
   return Math.max(0,Math.min(totalPx,((date.getTime()-startMs)/totalMs)*totalPx));
 }
 
-function TimelineView({project}){
+function TimelineView({project,onSelectActivity,onSelectTask}){
   const [tooltip,setTooltip]=useState(null);
   const [expanded,setExpanded]=useState({});
   const containerRef=useRef(null);
@@ -1411,9 +1422,9 @@ function TimelineView({project}){
             return(
               <React.Fragment key={act.id}>
                 <div className="tl-activity-row">
-                  <div className="tl-act-name" onClick={()=>act.tasks.length>0&&toggleExpand(act.id)}>
-                    {act.tasks.length>0&&<span className="tl-act-toggle">{isExp?"▼":"▶"}</span>}
-                    <div>
+                  <div className="tl-act-name">
+                    {act.tasks.length>0&&<span className="tl-act-toggle" style={{cursor:"pointer"}} title={isExp?"Colapsar":"Expandir tareas"} onClick={e=>{e.stopPropagation();toggleExpand(act.id);}}>{isExp?"▼":"▶"}</span>}
+                    <div style={{flex:1,minWidth:0,cursor:onSelectActivity?"pointer":"default"}} title={onSelectActivity?"Ir a la actividad (editar) ↗":""} onClick={()=>onSelectActivity&&onSelectActivity(act.id)}>
                       <div className="tl-act-name-text">{ai+1}. {act.name}</div>
                       <div className="tl-act-name-tasks">{act.tasks.length} tarea{act.tasks.length!==1?"s":""} · {status}</div>
                     </div>
@@ -1435,7 +1446,9 @@ function TimelineView({project}){
                           width:`${Math.max(0.5,(actEnd.getTime()-actStart.getTime())/totalMs*100)}%`,
                           background:color,
                           opacity:status==="Completado"?0.7:1,
+                          cursor:onSelectActivity?"pointer":"default",
                         }}
+                        onClick={()=>onSelectActivity&&onSelectActivity(act.id)}
                         onMouseMove={e=>setTooltip({
                           x:e.clientX,y:e.clientY,
                           name:act.name,
@@ -1459,7 +1472,7 @@ function TimelineView({project}){
                   const tColor=STATUS_COLOR_TL[task.estado]||"#888";
                   return(
                     <div key={task.id} className="tl-task-row">
-                      <div className="tl-task-name">
+                      <div className="tl-task-name" style={{cursor:onSelectTask?"pointer":"default"}} title={onSelectTask?"Ir a la tarea (editar) ↗":task.tarea} onClick={()=>onSelectTask&&onSelectTask(task.id)}>
                         <span style={{color:tColor,fontSize:8}}>●</span>
                         <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={task.tarea}>{task.tarea}</span>
                         {task.informeSocio&&<span title="Informe Socios" style={{fontSize:9,color:"var(--teal)",fontWeight:700,flexShrink:0}}>📋</span>}
@@ -2428,6 +2441,7 @@ function App({onSignOut, userEmail, accessToken}) {
   const [showNewAct,setShowNewAct]=useState(false);
   const [showApplySipoc,setShowApplySipoc]=useState(false);
   const [highlightTaskId,setHighlightTaskId]=useState(null);
+  const [highlightActId,setHighlightActId]=useState(null);
   const [showChangePw,setShowChangePw]=useState(false);
   const [changePwNew,setChangePwNew]=useState("");
   const [changePwConfirm,setChangePwConfirm]=useState("");
@@ -2903,7 +2917,7 @@ function App({onSignOut, userEmail, accessToken}) {
                         out.push(<div key={`sec-${sec}`} className="sipoc-section-header"><span className="sipoc-section-letter">{sec}</span><span className="sipoc-section-title">{SIPOC_SECTIONS[sec]}</span></div>);
                         lastSec=sec;
                       }
-                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} onDuplicateAct={duplicateAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)} newActId={newActId} onNameEditConsumed={()=>setNewActId(null)}/>);
+                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} onDuplicateAct={duplicateAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)} newActId={newActId} onNameEditConsumed={()=>setNewActId(null)} highlightActId={highlightActId} onActHighlightConsumed={()=>setHighlightActId(null)}/>);
                     });
                     return out;
                   })()}
@@ -2913,7 +2927,9 @@ function App({onSignOut, userEmail, accessToken}) {
                 <DesarrolloView project={selProj} currentUserName={emailToName(userEmail)} onUpdate={fn=>updBitacora(selId,fn)}/>
               )}
               {activeTab==="timeline"&&(
-                <TimelineView project={selProj}/>
+                <TimelineView project={selProj}
+                  onSelectActivity={(actId)=>{setActiveTab("actividades");setHighlightActId(actId);}}
+                  onSelectTask={(taskId)=>{setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
               )}
               {activeTab==="informe"&&(
                 <InformeView project={selProj} onSelectTask={(taskId)=>{setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
