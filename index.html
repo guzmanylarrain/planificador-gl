@@ -923,7 +923,7 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
 }
 
 // ── TASK ROW ────────────────────────────────────────────────────────────────
-function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed}) {
+function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed,edificios}) {
   const [open,setOpen]=useState(false);
   const rowRef=React.useRef(null);
   // Si esta tarea coincide con el highlight, abre detalle, scrollea y limpia highlight (one-shot)
@@ -1026,6 +1026,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {task.tipo&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:18,height:18,borderRadius:"50%",fontSize:10,fontWeight:800,flexShrink:0,background:task.tipo==="T"?"rgba(26,122,74,0.12)":"rgba(192,57,43,0.12)",color:task.tipo==="T"?"#1a7a4a":"#c0392b",border:`1.5px solid ${task.tipo==="T"?"#1a7a4a":"#c0392b"}`}}>{task.tipo}</span>}
             <div className="task-name">{task.tarea}</div>
+            {edificios&&(()=>{const e=task.edificio;const c=e==="Cayman"?{bg:"rgba(20,160,180,0.13)",fg:"var(--teal)"}:e==="Jamaica"?{bg:"rgba(214,90,48,0.13)",fg:"#b14a22"}:{bg:"var(--bg)",fg:"var(--ink3)"};return <span style={{fontSize:9.5,fontWeight:700,padding:"1px 6px",borderRadius:4,flexShrink:0,whiteSpace:"nowrap",background:c.bg,color:c.fg,border:"1px solid var(--line)"}}>{e||"Común"}</span>;})()}
             {(!task.responsable||!task.tipo||(task.tipo!=="R"&&!task.duracion&&!task.fechaTerminoE)||!task.fechaInicioE)&&(
               <span title={`Info incompleta: ${[!task.responsable?"responsable":null,!task.tipo?"tipo":null,(task.tipo!=="R"&&!task.duracion&&!task.fechaTerminoE)?"duración o fecha término":null,!task.fechaInicioE?"fecha inicio":null].filter(Boolean).join(", ")}`}
                 style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:10,fontWeight:700,color:"#c0392b",background:"rgba(192,57,43,0.1)",border:"1px solid rgba(192,57,43,0.25)",borderRadius:4,padding:"1px 5px",flexShrink:0,whiteSpace:"nowrap"}}>
@@ -1082,6 +1083,15 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
                 <option value="R">R — Restricción</option>
               </select>
             </div>
+            {edificios&&(
+            <div className="detail-field">
+              <div className="detail-label">Edificio</div>
+              <select className="detail-input" value={form.edificio||""} onChange={e=>set("edificio",e.target.value)}>
+                <option value="">Común (ambos)</option>
+                {edificios.map(b=><option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            )}
             {form.tipo!=="R"&&(
             <div className="detail-field">
               <div className="detail-label" style={{color:(!form.duracion&&!form.fechaTerminoE)?"var(--red)":"var(--ink3)"}}>Duración (días) {(!form.duracion&&!form.fechaTerminoE)&&<span style={{fontSize:9,fontWeight:700,color:"var(--red)"}}>*</span>}</div>
@@ -1190,7 +1200,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
 }
 
 // ── ACTIVITY GROUP ──────────────────────────────────────────────────────────
-function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,onDuplicateAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed,newActId,onNameEditConsumed,highlightActId,onActHighlightConsumed}) {
+function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRenameAct,onDeleteAct,onDuplicateAct,startIdx,onAuditLog,currentUserName,highlightTaskId,onHighlightConsumed,newActId,onNameEditConsumed,highlightActId,onActHighlightConsumed,edificios}) {
   const [collapsed,setCollapsed]=useState(true);
   const groupRef=React.useRef(null);
   const [actHighlighted,setActHighlighted]=useState(false);
@@ -1198,6 +1208,10 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
   const [newTaskName,setNewTaskName]=useState("");
   const [editingName,setEditingName]=useState(false);
   const [nameVal,setNameVal]=useState(activity.name);
+  // Selector de edificio (Cayman/Jamaica) por actividad — solo si el proyecto tiene edificios y la actividad es independiente
+  const porEd=!!(edificios&&edificios.length&&activity.porEdificio);
+  const [selEd,setSelEd]=useState(edificios&&edificios[0]);
+  const visTasks=porEd?(activity.tasks||[]).filter(t=>!t.edificio||t.edificio===selEd):(activity.tasks||[]);
   // Si una de las tareas tiene highlight, expandir esta actividad
   useEffect(()=>{
     if(highlightTaskId&&(activity.tasks||[]).some(t=>t.id===highlightTaskId)){
@@ -1219,7 +1233,7 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
   },[newActId,activity.id]);
   const confirmAdd=()=>{
     if(!newTaskName.trim())return setAddingTask(false);
-    onAddTask(activity.id,newTaskName.trim());
+    onAddTask(activity.id,newTaskName.trim(),porEd?selEd:"");
     setNewTaskName("");setAddingTask(false);
   };
   const confirmRename=()=>{if(nameVal.trim())onRenameAct(activity.id,nameVal.trim());setEditingName(false);};
@@ -1247,6 +1261,17 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
       </div>
       {!collapsed&&(
         <>
+          {porEd&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 18px",background:"var(--bg)",borderBottom:"1px solid var(--line)",flexWrap:"wrap"}}>
+              <span style={{fontSize:11,fontWeight:700,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:"0.04em"}}>Edificio</span>
+              <div style={{display:"inline-flex",background:"var(--white)",border:"1px solid var(--line)",borderRadius:7,padding:2,gap:2}}>
+                {edificios.map(b=>(
+                  <button key={b} onClick={()=>setSelEd(b)} style={{border:0,cursor:"pointer",fontSize:12.5,padding:"4px 14px",borderRadius:5,background:selEd===b?"var(--teal)":"transparent",color:selEd===b?"#fff":"var(--ink2)",fontWeight:selEd===b?700:500,transition:"background 0.12s"}}>{b}</button>
+                ))}
+              </div>
+              <span style={{fontSize:11,color:"var(--ink3)",marginLeft:"auto"}}>{visTasks.length} tarea{visTasks.length!==1?"s":""} en {selEd}</span>
+            </div>
+          )}
           <div className="tasks-table-head">
             <div className="th" style={{textAlign:"center"}}>#</div>
             <div className="th">Tarea / Restricción</div>
@@ -1257,9 +1282,9 @@ function ActivityGroup({activity,actIdx,onUpdateTask,onDeleteTask,onAddTask,onRe
             <div className="th">Responsable</div>
             <div className="th" style={{textAlign:"center"}}>IS</div>
           </div>
-          {activity.tasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin tareas.</div>}
-          {activity.tasks.map((task,i)=>(
-            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName} highlightTaskId={highlightTaskId} onHighlightConsumed={onHighlightConsumed}/>
+          {visTasks.length===0&&<div style={{padding:"14px 18px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>{porEd?`Sin tareas para ${selEd}.`:"Sin tareas."}</div>}
+          {visTasks.map((task,i)=>(
+            <TaskRow key={task.id} task={task} actId={activity.id} onUpdate={onUpdateTask} onDelete={onDeleteTask} globalIdx={startIdx+i} onAuditLog={onAuditLog} currentUserName={currentUserName} highlightTaskId={highlightTaskId} onHighlightConsumed={onHighlightConsumed} edificios={porEd?edificios:null}/>
           ))}
           {addingTask?(
             <div className="add-task-row">
@@ -2662,13 +2687,13 @@ function App({onSignOut, userEmail, accessToken}) {
       const idx=acts.findIndex(a=>a.id===aid);
       if(idx<0)return acts;
       const orig=acts[idx];
-      const copy={id:newId,name:`${orig.name} (copia)`,tasks:(orig.tasks||[]).map(t=>({...t,id:uid(),log:(t.log||[]).map(l=>({...l,id:uid()}))}))};
+      const copy={...orig,id:newId,name:`${orig.name} (copia)`,tasks:(orig.tasks||[]).map(t=>({...t,id:uid(),log:(t.log||[]).map(l=>({...l,id:uid()}))}))};
       return [...acts.slice(0,idx+1),copy,...acts.slice(idx+1)];
     });
     setNewActId(newId);
   };
-  const addTask=(aid,tarea)=>{
-    const task={id:uid(),tarea,tipo:"",prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[]};
+  const addTask=(aid,tarea,edificio="")=>{
+    const task={id:uid(),tarea,tipo:"",prioridad:3,informeSocio:false,estado:"Pendiente",responsable:"",duracion:"",fechaInicioE:today(),fechaTerminoE:"",fechaTerminoR:"",log:[],...(edificio?{edificio}:{})};
     updActs(selId,acts=>acts.map(a=>a.id===aid?{...a,tasks:[task,...a.tasks]}:a));
     const proj=projects.find(p=>p.id===selId);
     if(proj)logAudit("nueva_tarea",`Nueva tarea creada: "${tarea}"`,proj.name);
@@ -2917,7 +2942,7 @@ function App({onSignOut, userEmail, accessToken}) {
                         out.push(<div key={`sec-${sec}`} className="sipoc-section-header"><span className="sipoc-section-letter">{sec}</span><span className="sipoc-section-title">{SIPOC_SECTIONS[sec]}</span></div>);
                         lastSec=sec;
                       }
-                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} onDuplicateAct={duplicateAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)} newActId={newActId} onNameEditConsumed={()=>setNewActId(null)} highlightActId={highlightActId} onActHighlightConsumed={()=>setHighlightActId(null)}/>);
+                      out.push(<ActivityGroup key={a.id} activity={a} actIdx={ai+1} onUpdateTask={updateTask} onDeleteTask={deleteTask} onAddTask={addTask} onRenameAct={renameAct} onDeleteAct={deleteAct} onDuplicateAct={duplicateAct} startIdx={1} onAuditLog={logAudit} currentUserName={emailToName(userEmail)} highlightTaskId={highlightTaskId} onHighlightConsumed={()=>setHighlightTaskId(null)} newActId={newActId} onNameEditConsumed={()=>setNewActId(null)} highlightActId={highlightActId} onActHighlightConsumed={()=>setHighlightActId(null)} edificios={selProj?.edificios}/>);
                     });
                     return out;
                   })()}
