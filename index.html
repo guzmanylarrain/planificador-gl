@@ -977,6 +977,10 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
   const saveEditLog=()=>setForm(f=>({...f,log:f.log.map(l=>l.id===editingLogId?{...l,text:editLogText}:l)}))|| setEditingLogId(null);
   const cancelEditLog=()=>setEditingLogId(null);
   const lastLog=form.log.length>0?form.log[form.log.length-1]:null;
+  const [showAllLog,setShowAllLog]=useState(false);
+  // Bitácora: más nuevos primero; si hay más de 4, mostrar solo los 3 primeros hasta expandir
+  const orderedLogs=[...form.log].reverse();
+  const shownLogs=(orderedLogs.length>4&&!showAllLog)?orderedLogs.slice(0,3):orderedLogs;
   const overdue=isOverdue(task.fechaTerminoE)&&task.estado!=="Completado";
   const handleQuickComplete=(e)=>{
     e.stopPropagation();
@@ -1154,13 +1158,13 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
           </div>
           <div style={{height:1,background:"var(--line)",margin:"12px 0"}}/>
           <div className="log-section-title">Bitácora de Avance</div>
-          <div className="log-add-row">
+          <div className="log-add-row" style={{marginBottom:16}}>
             <input type="date" className="log-date-inp" value={newLogDate} onChange={e=>setNewLogDate(e.target.value)}/>
             <textarea className="log-text-inp" placeholder="Agregar nota... (Ctrl+Enter)" value={newLogText} onChange={e=>setNewLogText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&e.ctrlKey)addLog();}}/>
             <button className="btn btn-primary btn-sm" style={{alignSelf:"flex-end",flexShrink:0}} onClick={addLog}>+ Agregar</button>
           </div>
           {form.log.length===0&&<p style={{fontSize:12,color:"var(--ink3)",marginBottom:10}}>Sin entradas aún.</p>}
-          {[...form.log].reverse().map(l=>(
+          {shownLogs.map(l=>(
             <div className="log-entry" key={l.id}>
               <div className="log-date">{fmtDate(l.date)}</div>
               {editingLogId===l.id?(
@@ -1180,6 +1184,11 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
               </div>
             </div>
           ))}
+          {form.log.length>4&&(
+            <button className="inf-tbl-desc-more" onClick={()=>setShowAllLog(v=>!v)} style={{margin:"4px 0 8px"}}>
+              {showAllLog?"▲ Ocultar comentarios":`▼ Ver ${form.log.length-3} comentario${form.log.length-3===1?"":"s"} más`}
+            </button>
+          )}
           <div className="detail-actions" style={{flexDirection:"column",gap:8}}>
             {saveError&&<div style={{background:"var(--red-lt)",border:"1px solid rgba(192,57,43,0.2)",borderRadius:6,padding:"7px 11px",fontSize:12,color:"var(--red)",width:"100%"}}>{saveError}</div>}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",flexWrap:"wrap",gap:7}}>
