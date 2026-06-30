@@ -1862,7 +1862,7 @@ function InformeView({project, onSelectTask}) {
           <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             {hasEdificios&&(
               <div style={{display:"inline-flex",background:"var(--white)",border:"1px solid var(--line)",borderRadius:8,padding:2,gap:2}}>
-                {[{k:"todos",l:"Todos"}].concat(project.edificios.map(b=>({k:b,l:b}))).concat([{k:"Comun",l:"Común"}]).map(o=>(
+                {[{k:"todos",l:"Todos"}].concat(project.edificios.map(b=>({k:b,l:b}))).map(o=>(
                   <button key={o.k} onClick={()=>setFilterEd(o.k)} title={"Edificio: "+o.l} style={{border:0,cursor:"pointer",fontSize:12.5,padding:"5px 12px",borderRadius:6,background:filterEd===o.k?"var(--teal)":"transparent",color:filterEd===o.k?"#fff":"var(--ink2)",fontWeight:filterEd===o.k?700:500,transition:"background 0.12s"}}>{o.l}</button>
                 ))}
               </div>
@@ -1998,7 +1998,7 @@ function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
   return(
     <>
       <div className={rowCls} style={{borderLeftColor:PRIO_COLORS[prio]}}>
-        <div className={"inf-tbl-tarea"+(onSelectTask?" clickable":"")} onClick={onSelectTask?(()=>onSelectTask(t.id)):undefined} title={onSelectTask?"Ver/editar en Actividades":""}>{t.tarea}</div>
+        <div className={"inf-tbl-tarea"+(onSelectTask?" clickable":"")} onClick={onSelectTask?(()=>onSelectTask(t.id)):undefined} title={onSelectTask?"Ver/editar en Actividades":""}>{t.tarea}{(t.edificio==="Cayman"||t.edificio==="Jamaica")&&<span style={{display:"inline-block",marginLeft:7,fontSize:9.5,fontWeight:700,padding:"1px 7px",borderRadius:10,verticalAlign:"middle",whiteSpace:"nowrap",background:t.edificio==="Cayman"?"rgba(20,160,180,0.14)":"rgba(214,90,48,0.14)",color:t.edificio==="Cayman"?"var(--teal)":"#b14a22"}}>{t.edificio}</span>}</div>
         <div className="inf-tbl-tipo"><span className={"inf-tbl-tipo-badge "+tipoCls}>{t.tipo||"—"}</span></div>
         <div className="inf-tbl-desc">
           {lastLog?(
