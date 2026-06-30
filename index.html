@@ -1747,6 +1747,8 @@ function InformeView({project, onSelectTask}) {
   const [filterResp, setFilterResp] = useState([]);
   const [filterTipo, setFilterTipo] = useState([]);
   const [filterStatus, setFilterStatus] = useState(["Pendiente"]);
+  const [filterEd, setFilterEd] = useState("todos");
+  const hasEdificios = project.edificios && project.edificios.length;
   const today=new Date().toISOString().slice(0,10);
   const threeWeeksAgo=new Date();threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
   const threeWeeksAgoStr=threeWeeksAgo.toISOString().slice(0,10);
@@ -1765,6 +1767,11 @@ function InformeView({project, onSelectTask}) {
     if(filterResp.length>0&&!filterResp.includes(t.responsable))return false;
     if(filterTipo.length>0&&!filterTipo.includes(t.tipo||""))return false;
     if(filterStatus.length>0&&!filterStatus.includes(t.estado))return false;
+    if(hasEdificios&&filterEd!=="todos"){
+      const e=t.edificio||"";
+      if(filterEd==="Comun"){if(e!=="")return false;}
+      else if(e!==filterEd)return false;
+    }
     return true;
   };
   const allTasks=allTasksRaw.filter(filt);
@@ -1853,6 +1860,13 @@ function InformeView({project, onSelectTask}) {
             <div className="inf-subtitle">{dateStr} · {project.name.split(" - ")[0]}</div>
           </div>
           <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            {hasEdificios&&(
+              <div style={{display:"inline-flex",background:"var(--white)",border:"1px solid var(--line)",borderRadius:8,padding:2,gap:2}}>
+                {[{k:"todos",l:"Todos"}].concat(project.edificios.map(b=>({k:b,l:b}))).concat([{k:"Comun",l:"Común"}]).map(o=>(
+                  <button key={o.k} onClick={()=>setFilterEd(o.k)} title={"Edificio: "+o.l} style={{border:0,cursor:"pointer",fontSize:12.5,padding:"5px 12px",borderRadius:6,background:filterEd===o.k?"var(--teal)":"transparent",color:filterEd===o.k?"#fff":"var(--ink2)",fontWeight:filterEd===o.k?700:500,transition:"background 0.12s"}}>{o.l}</button>
+                ))}
+              </div>
+            )}
             {allResponsables.length>1&&(
               <FilterMulti
                 placeholder="Todos los responsables"
@@ -1887,7 +1901,7 @@ function InformeView({project, onSelectTask}) {
         const showable=allTasks.filter(t=>t.estado!=="Completado"||completedRecent(t));
         if(showable.length===0)return(
           <div className="inf-tbl-empty">
-            {(soloIS||filterResp.length>0||filterTipo.length>0||filterStatus.length>0)?"No hay tareas críticas (prioridad Alta/Media) que cumplan los filtros aplicados.":"No hay tareas críticas (prioridad Alta/Media) para mostrar en este proyecto."}
+            {(soloIS||filterResp.length>0||filterTipo.length>0||filterStatus.length>0||(hasEdificios&&filterEd!=="todos"))?"No hay tareas críticas (prioridad Alta/Media) que cumplan los filtros aplicados.":"No hay tareas críticas (prioridad Alta/Media) para mostrar en este proyecto."}
           </div>
         );
         const byAct=new Map();
