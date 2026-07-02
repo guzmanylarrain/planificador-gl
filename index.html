@@ -2067,7 +2067,7 @@ function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
 }
 
 function SociosView({projects,onSelectTask}) {
-  const [filterStatus,setFilterStatus]=useState([]);
+  const [filterStatus,setFilterStatus]=useState(["Pendiente"]);
   const today=new Date().toISOString().slice(0,10);
   const sevenDays=new Date();sevenDays.setDate(sevenDays.getDate()+7);
   const sevenStr=sevenDays.toISOString().slice(0,10);
