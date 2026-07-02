@@ -2067,6 +2067,7 @@ function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
 }
 
 function SociosView({projects,onSelectTask}) {
+  const [filterStatus,setFilterStatus]=useState([]);
   const today=new Date().toISOString().slice(0,10);
   const sevenDays=new Date();sevenDays.setDate(sevenDays.getDate()+7);
   const sevenStr=sevenDays.toISOString().slice(0,10);
@@ -2077,7 +2078,7 @@ function SociosView({projects,onSelectTask}) {
   const getCity=n=>n.split(" - ")[0].trim();
   const getShort=n=>n.split(" - ").slice(1).join(" - ")||n;
   const items=projects.map(p=>{
-    const groups=(p.activities||[]).map(a=>({actName:a.name,tasks:(a.tasks||[]).filter(t=>t.informeSocio)})).filter(g=>g.tasks.length>0);
+    const groups=(p.activities||[]).map(a=>({actName:a.name,tasks:(a.tasks||[]).filter(t=>t.informeSocio&&(filterStatus.length===0||filterStatus.includes(t.estado)))})).filter(g=>g.tasks.length>0);
     const tasks=groups.flatMap(g=>g.tasks);
     return {proj:p,groups,nTasks:tasks.length,nOver:tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length};
   }).filter(x=>x.nTasks>0)
@@ -2102,10 +2103,20 @@ function SociosView({projects,onSelectTask}) {
             </div>
             <div className="inf-subtitle">{dateStr} · Solo tareas marcadas 📋 Informe Socios</div>
           </div>
+          <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            <FilterMulti
+              placeholder="Todos los estados"
+              options={STATUS_OPTS.map(s=>({val:s,label:s}))}
+              selected={filterStatus} onChange={setFilterStatus}
+            />
+            {filterStatus.length>0&&(
+              <button className="btn btn-ghost btn-xs" onClick={()=>setFilterStatus([])}>✕</button>
+            )}
+          </div>
         </div>
       </div>
       {items.length===0?(
-        <div className="inf-tbl-empty">No hay tareas marcadas con "Informe Socios" en ningún proyecto. Abre una tarea y activa el check 📋 Informe Socios para que aparezca aquí.</div>
+        <div className="inf-tbl-empty">{filterStatus.length>0?"No hay tareas marcadas 📋 Informe Socios con el estado seleccionado.":"No hay tareas marcadas con \"Informe Socios\" en ningún proyecto. Abre una tarea y activa el check 📋 Informe Socios para que aparezca aquí."}</div>
       ):items.map(it=><SociosProjGroup key={it.proj.id} item={it} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask}/>)}
     </div>
   );
