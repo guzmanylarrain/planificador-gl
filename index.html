@@ -2034,8 +2034,8 @@ function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
 }
 
 // ── INFORME SOCIOS (panel global: solo tareas marcadas IS) ───────────────────
-function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask,defaultOpen}) {
-  const [open,setOpen]=useState(!!defaultOpen);
+function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
+  const [open,setOpen]=useState(false);
   const p=item.proj;
   const short=p.name.split(" - ").slice(1).join(" - ")||p.name;
   const city=p.name.split(" - ")[0].trim();
@@ -2118,80 +2118,6 @@ function SociosView({projects,onSelectTask}) {
       {items.length===0?(
         <div className="inf-tbl-empty">{filterStatus.length>0?"No hay tareas marcadas 📋 Informe Socios con el estado seleccionado.":"No hay tareas marcadas con \"Informe Socios\" en ningún proyecto. Abre una tarea y activa el check 📋 Informe Socios para que aparezca aquí."}</div>
       ):items.map(it=><SociosProjGroup key={it.proj.id} item={it} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask}/>)}
-    </div>
-  );
-}
-
-// ── MIS TAREAS (todas mis tareas en todos los proyectos) ─────────────────────
-function MisTareasView({projects,userEmail,onSelectTask}) {
-  const detected=emailToName(userEmail||"");
-  const [who,setWho]=useState(RESPONSABLES.includes(detected)?detected:"");
-  const [filterStatus,setFilterStatus]=useState(["Pendiente","En Proceso"]);
-  const today=new Date().toISOString().slice(0,10);
-  const sevenDays=new Date();sevenDays.setDate(sevenDays.getDate()+7);
-  const sevenStr=sevenDays.toISOString().slice(0,10);
-  const fmtDate=d=>{if(!d||d.length<8)return"—";const[y,m,day]=d.split("-");return`${day}/${m}/${y.slice(2)}`;};
-  const daysDiff=d=>{const diff=Math.floor((new Date(today)-new Date(d))/864e5);return diff===0?"hoy":diff===1?"1 día":diff+" días";};
-  const dateStr=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
-  const CITY_ORDER=["Arica","Iquique","Antofagasta","Maipú"];
-  const getCity=n=>n.split(" - ")[0].trim();
-  const getShort=n=>n.split(" - ").slice(1).join(" - ")||n;
-  const urgencyRank=t=>{
-    if(t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today)return 0;
-    if(t.estado==="Completado")return 2;
-    return 1;
-  };
-  const items=!who?[]:projects.map(p=>{
-    const groups=(p.activities||[]).map(a=>({actName:a.name,tasks:(a.tasks||[]).filter(t=>(t.responsable||"")===who&&(filterStatus.length===0||filterStatus.includes(t.estado))).sort((x,y)=>(urgencyRank(x)-urgencyRank(y))||((x.fechaTerminoE||"zzzz").localeCompare(y.fechaTerminoE||"zzzz")))})).filter(g=>g.tasks.length>0);
-    const tasks=groups.flatMap(g=>g.tasks);
-    return {proj:p,groups,nTasks:tasks.length,nOver:tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length};
-  }).filter(x=>x.nTasks>0)
-  .sort((a,b)=>{
-    const ia=CITY_ORDER.indexOf(getCity(a.proj.name)), ib=CITY_ORDER.indexOf(getCity(b.proj.name));
-    return ((ia<0?99:ia)-(ib<0?99:ib))||getCity(a.proj.name).localeCompare(getCity(b.proj.name),'es')||getShort(a.proj.name).localeCompare(getShort(b.proj.name),'es',{numeric:true});
-  });
-  const all=items.flatMap(x=>x.groups.flatMap(g=>g.tasks));
-  const nOver=all.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length;
-  const nWeek=all.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE>=today&&t.fechaTerminoE<=sevenStr).length;
-  return(
-    <div className="inf-wrap">
-      <div className="inf-header" style={{borderBottomColor:"var(--teal)"}}>
-        <div className="inf-header-top">
-          <div>
-            <div className="inf-eyebrow" style={{color:"var(--teal)"}}>Panel personal</div>
-            <div className="inf-title" style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-              <span>Mis Tareas</span>
-              {who&&(
-                <span style={{fontSize:13,fontWeight:600,fontFamily:"'IBM Plex Sans',sans-serif",background:"var(--bg)",border:"1px solid var(--line)",borderRadius:14,padding:"4px 12px",color:"var(--ink2)",letterSpacing:0.2}}>
-                  <span style={{color:"var(--teal)",fontWeight:700}}>{all.length}</span> tarea{all.length===1?"":"s"}
-                  {nWeek>0&&<span style={{color:"#b06f08",fontWeight:700,marginLeft:8}}>· ⏰ {nWeek} esta semana</span>}
-                  {nOver>0&&<span style={{color:"var(--red)",fontWeight:700,marginLeft:8}}>· {nOver} atrasada{nOver===1?"":"s"}</span>}
-                </span>
-              )}
-            </div>
-            <div className="inf-subtitle">{dateStr}</div>
-          </div>
-          <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-            <select className="filter-select" value={who} onChange={e=>setWho(e.target.value)}>
-              <option value="">— Elige responsable —</option>
-              {RESPONSABLES.map(r=><option key={r} value={r}>{r}</option>)}
-            </select>
-            <FilterMulti
-              placeholder="Todos los estados"
-              options={STATUS_OPTS.map(s=>({val:s,label:s}))}
-              selected={filterStatus} onChange={setFilterStatus}
-            />
-            {filterStatus.length>0&&(
-              <button className="btn btn-ghost btn-xs" onClick={()=>setFilterStatus([])}>✕</button>
-            )}
-          </div>
-        </div>
-      </div>
-      {!who?(
-        <div className="inf-tbl-empty">Elige tu nombre en el selector de responsable (arriba a la derecha) para ver tus tareas.</div>
-      ):items.length===0?(
-        <div className="inf-tbl-empty">No hay tareas asignadas a {who} que cumplan el filtro aplicado.</div>
-      ):items.map(it=><SociosProjGroup key={it.proj.id} item={it} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask} defaultOpen={true}/>)}
     </div>
   );
 }
@@ -2739,7 +2665,6 @@ function App({onSignOut, userEmail, accessToken}) {
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [showDashboard,setShowDashboard]=useState(false);
   const [showSocios,setShowSocios]=useState(false);
-  const [showMisTareas,setShowMisTareas]=useState(false);
   const [globalSearch,setGlobalSearch]=useState("");
   const [showAudit,setShowAudit]=useState(false);
   const [auditLogs,setAuditLogs]=useState([]);
@@ -3019,7 +2944,7 @@ function App({onSignOut, userEmail, accessToken}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects} selId={selId} onSelect={id=>{setSelId(id);setShowDashboard(false);setShowSocios(false);setShowMisTareas(false);}} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
+        <CitySidebar projects={projects} selId={selId} onSelect={id=>{setSelId(id);setShowDashboard(false);setShowSocios(false);}} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects.filter(p=>!p.archived))}>⬇ Exportar CSV</button>
@@ -3045,10 +2970,9 @@ function App({onSignOut, userEmail, accessToken}) {
 
       <div className="main">
         <div className="global-nav">
-          <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);setShowSocios(false);setShowMisTareas(false);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
-          <button className={"global-nav-btn"+((!showDashboard&&!showSocios&&!showMisTareas)?" active":"")} onClick={()=>{setShowDashboard(false);setShowSocios(false);setShowMisTareas(false);}}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
-          <button className={"global-nav-btn"+(showMisTareas?" active":"")} onClick={()=>{setShowMisTareas(true);setShowDashboard(false);setShowSocios(false);if(!isMobile)setSelId(null);}}>👤 Mis Tareas</button>
-          <button className={"global-nav-btn"+(showSocios?" active":"")} onClick={()=>{setShowSocios(true);setShowDashboard(false);setShowMisTareas(false);if(!isMobile)setSelId(null);}}>🤝 Informe Socios</button>
+          <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);setShowSocios(false);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
+          <button className={"global-nav-btn"+((!showDashboard&&!showSocios)?" active":"")} onClick={()=>{setShowDashboard(false);setShowSocios(false);}}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
+          <button className={"global-nav-btn"+(showSocios?" active":"")} onClick={()=>{setShowSocios(true);setShowDashboard(false);if(!isMobile)setSelId(null);}}>🤝 Informe Socios</button>
           <div className="global-search-wrap">
             <div className="global-search-box">
               <span className="global-search-icon">🔍</span>
@@ -3067,7 +2991,7 @@ function App({onSignOut, userEmail, accessToken}) {
                 return(
                   <div className="global-results">
                     {results.map((r,i)=>(
-                      <div key={i} className="global-result-item" onMouseDown={()=>{setSelId(r.projId);setShowDashboard(false);setShowSocios(false);setShowMisTareas(false);setGlobalSearch("");setShowGlobalResults(false);}}>
+                      <div key={i} className="global-result-item" onMouseDown={()=>{setSelId(r.projId);setShowDashboard(false);setShowSocios(false);setGlobalSearch("");setShowGlobalResults(false);}}>
                         <div className="global-result-proj">{r.projName}</div>
                         <div className="global-result-task">{r.tarea}</div>
                         <div className="global-result-act">{r.actName} · {r.responsable||"Sin asignar"}</div>
@@ -3118,7 +3042,7 @@ function App({onSignOut, userEmail, accessToken}) {
 
             {mobileShowProject&&<button className="mobile-back-btn" onClick={()=>setSelId(null)}>← Proyectos</button>}
             {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
-            <h2>{selProj?selProj.name:showSocios?"Informe Socios":showMisTareas?"Mis Tareas":isMobile?"Planificador":"Selecciona un proyecto"}</h2>
+            <h2>{selProj?selProj.name:showSocios?"Informe Socios":isMobile?"Planificador":"Selecciona un proyecto"}</h2>
             {selProj&&(()=>{
               const done=allTasks.filter(t=>t.estado==="Completado").length;
               const pct=allTasks.length>0?Math.round(done/allTasks.length*100):0;
@@ -3156,8 +3080,6 @@ function App({onSignOut, userEmail, accessToken}) {
             <DashboardView projects={projects.filter(p=>!p.archived)} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowDashboard(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):showSocios?(
             <SociosView projects={projects.filter(p=>!p.archived)} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowSocios(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
-          ):showMisTareas?(
-            <MisTareasView projects={projects.filter(p=>!p.archived)} userEmail={userEmail} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowMisTareas(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
