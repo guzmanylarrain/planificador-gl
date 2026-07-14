@@ -2122,6 +2122,195 @@ function SociosView({projects,onSelectTask}) {
   );
 }
 
+// ── PLAN SEMANAL (PUEDE) — compromisos de corto plazo, semana Mi→Ma ──────────
+const PLAN_DIAS=[["mi","Mi"],["ju","Ju"],["vi","Vi"],["lu","Lu"],["ma","Ma"]];
+function planWeekWed(d){const x=new Date(d);x.setDate(x.getDate()-((x.getDay()-3+7)%7));return x.toISOString().slice(0,10);}
+function planAddDays(iso,n){const x=new Date(iso+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);}
+function PlanSemanalView({items,onChange,projects,onSelectTask}) {
+  const [week,setWeek]=useState(planWeekWed(new Date()));
+  const [fResp,setFResp]=useState("");
+  const [showHist,setShowHist]=useState(false);
+  const [addProj,setAddProj]=useState("");
+  const [addAct,setAddAct]=useState("");
+  const [addTaskId,setAddTaskId]=useState("");
+  const [addComp,setAddComp]=useState("");
+  const [addResp,setAddResp]=useState("");
+  const fmtD=iso=>{if(!iso)return"—";const[y,m,d]=iso.split("-");return`${d}/${m}/${y.slice(2)}`;};
+  const dateStr=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  const respAll=[...new Set([...RESPONSABLES,...items.map(i=>i.responsable).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'es'));
+  const allWeeks=[...new Set([...items.map(i=>i.semana),week])].sort().reverse();
+  const weekItems=items.filter(i=>i.semana===week&&(!fResp||i.responsable===fResp));
+  const marked=weekItems.filter(i=>i.ppc===1||i.ppc===0);
+  const okCount=marked.filter(i=>i.ppc===1).length;
+  const ppcPct=marked.length?Math.round(okCount/marked.length*100):null;
+  const respWeek=[...new Set(weekItems.map(i=>i.responsable).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const addProjObj=projects.find(p=>p.id===addProj);
+  const addActObj=(addProjObj?.activities||[]).find(a=>a.id===addAct);
+  const upd=(id,fn)=>onChange(items.map(i=>i.id===id?fn({...i,dias:{...(i.dias||{})}}):i));
+  const del=id=>{if(confirm("¿Eliminar este compromiso?"))onChange(items.filter(i=>i.id!==id));};
+  const cyclePpc=it=>upd(it.id,x=>({...x,ppc:(x.ppc===1)?0:(x.ppc===0?null:1)}));
+  const addItem=()=>{
+    if(!addComp.trim())return;
+    const t=(addActObj?.tasks||[]).find(x=>x.id===addTaskId);
+    onChange([...items,{id:uid(),semana:week,projId:addProj||null,actId:addAct||null,taskId:addTaskId||null,
+      vinculoTexto:addProjObj?`${addProjObj.name}${addActObj?" // "+addActObj.name:""}${t?" // "+t.tarea:""}`:"",
+      compromiso:addComp.trim(),responsable:addResp,dias:{mi:false,ju:false,vi:false,lu:false,ma:false},ppc:null}]);
+    setAddComp("");setAddTaskId("");
+  };
+  const renderVinculo=it=>{
+    const p=it.projId&&projects.find(x=>x.id===it.projId);
+    if(p){
+      const a=(p.activities||[]).find(x=>x.id===it.actId);
+      const t=a&&(a.tasks||[]).find(x=>x.id===it.taskId);
+      const label=`${p.name.split(" - ").slice(1).join(" - ")||p.name}${a?` · ${a.name}`:""}${t?` · ${t.tarea}`:""}`;
+      return <span onClick={()=>it.taskId&&onSelectTask(p.id,it.taskId)} title={it.taskId?"Ver/editar la tarea":""} style={{fontSize:11.5,color:"var(--teal)",fontWeight:600,cursor:it.taskId?"pointer":"default",lineHeight:1.35,display:"block"}}>{label}</span>;
+    }
+    return <span style={{fontSize:11.5,color:"var(--ink3)",lineHeight:1.35,display:"block"}}>{it.vinculoTexto||"—"}</span>;
+  };
+  const grid="30px minmax(180px,1.2fr) minmax(220px,1.8fr) 148px repeat(5,30px) 46px 30px";
+  const pct=list=>{const m=list.filter(i=>i.ppc===1||i.ppc===0);return m.length?Math.round(m.filter(i=>i.ppc===1).length/m.length*100):null;};
+  const histWeeks=[...new Set(items.filter(i=>i.ppc===1||i.ppc===0).map(i=>i.semana))].sort().reverse().slice(0,12);
+  const histResp=[...new Set(items.filter(i=>i.ppc===1||i.ppc===0).map(i=>i.responsable).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  return(
+    <div className="inf-wrap">
+      <div className="inf-header" style={{borderBottomColor:"var(--teal)"}}>
+        <div className="inf-header-top">
+          <div>
+            <div className="inf-eyebrow" style={{color:"var(--teal)"}}>Plan Semanal (PUEDE)</div>
+            <div className="inf-title" style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              <span>Semana Mi {fmtD(week)} → Ma {fmtD(planAddDays(week,6))}</span>
+              <span style={{fontSize:13,fontWeight:600,fontFamily:"'IBM Plex Sans',sans-serif",background:"var(--bg)",border:"1px solid var(--line)",borderRadius:14,padding:"4px 12px",color:"var(--ink2)",letterSpacing:0.2}}>
+                <span style={{color:"var(--teal)",fontWeight:700}}>{weekItems.length}</span> compromiso{weekItems.length===1?"":"s"}
+                {ppcPct!==null&&<span style={{marginLeft:8,fontWeight:700,color:ppcPct>=80?"var(--green)":ppcPct>=50?"#b06f08":"var(--red)"}}>· PPC {ppcPct}% ({okCount}/{marked.length})</span>}
+              </span>
+            </div>
+            <div className="inf-subtitle">{dateStr}</div>
+          </div>
+          <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            <button className="btn btn-outline btn-sm" onClick={()=>setWeek(planAddDays(week,-7))}>◀</button>
+            <select className="filter-select" value={week} onChange={e=>setWeek(e.target.value)} style={{minWidth:150}}>
+              {allWeeks.map(w=><option key={w} value={w}>Mi {fmtD(w)}</option>)}
+            </select>
+            <button className="btn btn-outline btn-sm" onClick={()=>setWeek(planAddDays(week,7))}>▶</button>
+            <button className="btn btn-outline btn-sm" onClick={()=>setWeek(planWeekWed(new Date()))}>Esta semana</button>
+            <select className="filter-select" value={fResp} onChange={e=>setFResp(e.target.value)}>
+              <option value="">Todos los responsables</option>
+              {respAll.map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+            <button className={"inf-toggle"+(showHist?" on":"")} onClick={()=>setShowHist(s=>!s)}>📈 Historial PPC</button>
+          </div>
+        </div>
+      </div>
+
+      {respWeek.length>1&&(
+        <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
+          {respWeek.map(r=>{
+            const p=pct(weekItems.filter(i=>i.responsable===r));
+            return <span key={r} style={{fontSize:11.5,fontWeight:600,background:"var(--white)",border:"1px solid var(--line)",borderRadius:12,padding:"3px 11px",color:"var(--ink2)"}}>{r}: <span style={{fontWeight:700,color:p===null?"var(--ink3)":p>=80?"var(--green)":p>=50?"#b06f08":"var(--red)"}}>{p===null?"—":p+"%"}</span></span>;
+          })}
+        </div>
+      )}
+
+      {showHist&&(
+        <div style={{background:"var(--white)",border:"1px solid var(--line)",borderRadius:10,padding:"14px 16px",marginBottom:16,overflowX:"auto"}}>
+          <div style={{fontSize:12.5,fontWeight:700,color:"var(--ink2)",marginBottom:10}}>📈 PPC por responsable — últimas {histWeeks.length} semanas con datos</div>
+          <table style={{borderCollapse:"collapse",fontSize:12,minWidth:480}}>
+            <thead><tr>
+              <th style={{textAlign:"left",padding:"4px 10px 4px 0",color:"var(--ink3)",fontWeight:700}}>Semana</th>
+              {histResp.map(r=><th key={r} style={{textAlign:"center",padding:"4px 8px",color:"var(--ink3)",fontWeight:700}}>{r.split(" ")[0]}</th>)}
+              <th style={{textAlign:"center",padding:"4px 8px",color:"var(--ink)",fontWeight:700}}>Total</th>
+            </tr></thead>
+            <tbody>
+              {histWeeks.map(w=>{
+                const wi=items.filter(i=>i.semana===w);
+                return(<tr key={w} style={{borderTop:"1px solid var(--line)"}}>
+                  <td style={{padding:"4px 10px 4px 0",fontWeight:600,color:"var(--ink2)",cursor:"pointer"}} onClick={()=>setWeek(w)} title="Ir a esta semana">{fmtD(w)}</td>
+                  {histResp.map(r=>{const p=pct(wi.filter(i=>i.responsable===r));return <td key={r} style={{textAlign:"center",padding:"4px 8px",color:p===null?"var(--ink3)":p>=80?"var(--green)":p>=50?"#b06f08":"var(--red)",fontWeight:600}}>{p===null?"·":p+"%"}</td>;})}
+                  <td style={{textAlign:"center",padding:"4px 8px",fontWeight:700}}>{(()=>{const p=pct(wi);return p===null?"·":p+"%";})()}</td>
+                </tr>);
+              })}
+              <tr style={{borderTop:"2px solid var(--ink2)"}}>
+                <td style={{padding:"5px 10px 4px 0",fontWeight:700}}>Total general</td>
+                {histResp.map(r=>{const p=pct(items.filter(i=>i.responsable===r));return <td key={r} style={{textAlign:"center",padding:"5px 8px",fontWeight:700}}>{p===null?"·":p+"%"}</td>;})}
+                <td style={{textAlign:"center",padding:"5px 8px",fontWeight:700}}>{(()=>{const p=pct(items);return p===null?"·":p+"%";})()}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{background:"var(--white)",border:"1px solid var(--line)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:0.6,marginBottom:8}}>+ Nuevo compromiso (semana del {fmtD(week)})</div>
+        <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
+          <select className="filter-select" value={addProj} onChange={e=>{setAddProj(e.target.value);setAddAct("");setAddTaskId("");}} style={{maxWidth:190}}>
+            <option value="">— Sin vínculo —</option>
+            {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          {addProjObj&&(
+            <select className="filter-select" value={addAct} onChange={e=>{setAddAct(e.target.value);setAddTaskId("");}} style={{maxWidth:200}}>
+              <option value="">— Actividad —</option>
+              {(addProjObj.activities||[]).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          )}
+          {addActObj&&(
+            <select className="filter-select" value={addTaskId} onChange={e=>setAddTaskId(e.target.value)} style={{maxWidth:220}}>
+              <option value="">— Tarea (opcional) —</option>
+              {(addActObj.tasks||[]).map(t=><option key={t.id} value={t.id}>{(t.tipo?`[${t.tipo}] `:"")+t.tarea}</option>)}
+            </select>
+          )}
+          <input className="filter-select" placeholder="Compromiso..." value={addComp} onChange={e=>setAddComp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addItem();}} style={{flex:1,minWidth:200,cursor:"text"}}/>
+          <select className="filter-select" value={addResp} onChange={e=>setAddResp(e.target.value)}>
+            <option value="">— Responsable —</option>
+            {respAll.map(r=><option key={r} value={r}>{r}</option>)}
+          </select>
+          <button className="btn btn-primary btn-sm" onClick={addItem} disabled={!addComp.trim()}>+ Agregar</button>
+        </div>
+      </div>
+
+      <div style={{background:"var(--white)",border:"1px solid var(--line)",borderRadius:10,overflow:"hidden"}}>
+        <div style={{overflowX:"auto"}}>
+          <div style={{minWidth:900}}>
+            <div style={{display:"grid",gridTemplateColumns:grid,gap:6,alignItems:"center",background:"var(--ink)",color:"#c0bdb6",fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,padding:"9px 12px"}}>
+              <div>N°</div><div>Proyecto // Actividad // Tarea</div><div>Compromiso</div><div>Responsable</div>
+              {PLAN_DIAS.map(([k,l])=><div key={k} style={{textAlign:"center"}}>{l}</div>)}
+              <div style={{textAlign:"center"}}>PPC</div><div/>
+            </div>
+            {weekItems.length===0&&<div style={{padding:"18px 16px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin compromisos esta semana. Agrega el primero arriba.</div>}
+            {weekItems.map((it,idx)=>(
+              <div key={it.id} style={{display:"grid",gridTemplateColumns:grid,gap:6,alignItems:"center",padding:"7px 12px",borderTop:"1px solid var(--line)",background:it.ppc===1?"rgba(39,174,96,0.05)":it.ppc===0?"rgba(192,57,43,0.05)":"transparent"}}>
+                <div style={{fontSize:11.5,color:"var(--ink3)"}}>{idx+1}</div>
+                <div>{renderVinculo(it)}</div>
+                <input value={it.compromiso} onChange={e=>upd(it.id,x=>({...x,compromiso:e.target.value}))}
+                  style={{border:"1px solid transparent",borderRadius:5,padding:"4px 7px",fontSize:12.5,color:"var(--ink)",background:"transparent",outline:"none",width:"100%",boxSizing:"border-box"}}
+                  onFocus={e=>e.target.style.borderColor="var(--line)"} onBlur={e=>e.target.style.borderColor="transparent"}/>
+                <select value={it.responsable||""} onChange={e=>upd(it.id,x=>({...x,responsable:e.target.value}))}
+                  style={{border:"1px solid var(--line)",borderRadius:5,padding:"3px 5px",fontSize:11.5,color:"var(--ink2)",background:"var(--white)",outline:"none",width:"100%"}}>
+                  <option value="">—</option>
+                  {respAll.map(r=><option key={r} value={r}>{r}</option>)}
+                </select>
+                {PLAN_DIAS.map(([k])=>(
+                  <div key={k} style={{textAlign:"center"}}>
+                    <input type="checkbox" checked={!!(it.dias&&it.dias[k])} onChange={e=>upd(it.id,x=>({...x,dias:{...x.dias,[k]:e.target.checked}}))} style={{accentColor:"var(--teal)",cursor:"pointer"}}/>
+                  </div>
+                ))}
+                <div style={{textAlign:"center"}}>
+                  <button onClick={()=>cyclePpc(it)} title="Click: alterna Cumplido ✓ / No cumplido ✗ / Sin evaluar —"
+                    style={{width:30,height:24,borderRadius:5,cursor:"pointer",fontWeight:800,fontSize:12,border:"1px solid "+(it.ppc===1?"var(--green)":it.ppc===0?"var(--red)":"var(--line)"),
+                      background:it.ppc===1?"rgba(39,174,96,0.12)":it.ppc===0?"rgba(192,57,43,0.1)":"var(--white)",
+                      color:it.ppc===1?"var(--green)":it.ppc===0?"var(--red)":"var(--ink3)"}}>
+                    {it.ppc===1?"✓":it.ppc===0?"✗":"—"}
+                  </button>
+                </div>
+                <button onClick={()=>del(it.id)} title="Eliminar compromiso" style={{border:"none",background:"none",cursor:"pointer",color:"var(--ink3)",fontSize:13}}>🗑</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── BADGE "VENCE ESTA SEMANA" (topbar del proyecto) ──────────────────────────
 function VenceSemanaBadge({tasks,onSelectTask}) {
   const [open,setOpen]=useState(false);
@@ -2665,6 +2854,11 @@ function App({onSignOut, userEmail, accessToken}) {
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [showDashboard,setShowDashboard]=useState(false);
   const [showSocios,setShowSocios]=useState(false);
+  const [showPlan,setShowPlan]=useState(false);
+  const [planItems,setPlanItems]=useState(null);
+  const planSaveTimer=useRef(null);
+  const planPending=useRef(false);
+  const planLastUpd=useRef(null);
   const [globalSearch,setGlobalSearch]=useState("");
   const [showAudit,setShowAudit]=useState(false);
   const [auditLogs,setAuditLogs]=useState([]);
@@ -2762,6 +2956,39 @@ function App({onSignOut, userEmail, accessToken}) {
 
   const updateProjects=p=>{setProjects(p);saveProjects(p);};
   const updBitacora=(pid,fn)=>updateProjects(projects.map(p=>p.id===pid?{...p,bitacora:fn(p.bitacora||[])}:p));
+
+  // Plan Semanal (PUEDE): carga al abrir la pestaña, polling 10s mientras esté abierta, guardado con debounce
+  const loadPlan=useCallback(async(silent=false)=>{
+    if(!db)return;
+    try{
+      const rows=await db.select("plan_semanal","id=eq.main");
+      if(rows.length===0){setPlanItems(p=>p||[]);return;}
+      if(!silent||(!planPending.current&&rows[0].updated_at!==planLastUpd.current)){
+        setPlanItems(rows[0].data||[]);
+        planLastUpd.current=rows[0].updated_at;
+      }
+    }catch(e){console.error(e);setPlanItems(p=>p||[]);}
+  },[]);
+  useEffect(()=>{if(showPlan&&planItems===null)loadPlan();},[showPlan,planItems,loadPlan]);
+  useEffect(()=>{
+    if(!showPlan)return;
+    const t=setInterval(()=>loadPlan(true),10000);
+    return()=>clearInterval(t);
+  },[showPlan,loadPlan]);
+  const updatePlan=(newItems)=>{
+    setPlanItems(newItems);
+    if(!db)return;
+    planPending.current=true;
+    clearTimeout(planSaveTimer.current);
+    planSaveTimer.current=setTimeout(async()=>{
+      try{
+        const now=new Date().toISOString();
+        await db.upsert("plan_semanal",{id:"main",data:newItems,updated_at:now});
+        planLastUpd.current=now;
+      }catch(e){console.error(e);}
+      planPending.current=false;
+    },1200);
+  };
 
   const loadAuditLogs=useCallback(async()=>{
     if(!db)return;
@@ -2944,7 +3171,7 @@ function App({onSignOut, userEmail, accessToken}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects} selId={selId} onSelect={id=>{setSelId(id);setShowDashboard(false);setShowSocios(false);}} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
+        <CitySidebar projects={projects} selId={selId} onSelect={id=>{setSelId(id);setShowDashboard(false);setShowSocios(false);setShowPlan(false);}} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects.filter(p=>!p.archived))}>⬇ Exportar CSV</button>
@@ -2970,9 +3197,10 @@ function App({onSignOut, userEmail, accessToken}) {
 
       <div className="main">
         <div className="global-nav">
-          <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);setShowSocios(false);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
-          <button className={"global-nav-btn"+((!showDashboard&&!showSocios)?" active":"")} onClick={()=>{setShowDashboard(false);setShowSocios(false);}}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
-          <button className={"global-nav-btn"+(showSocios?" active":"")} onClick={()=>{setShowSocios(true);setShowDashboard(false);if(!isMobile)setSelId(null);}}>🤝 Informe Socios</button>
+          <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);setShowSocios(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
+          <button className={"global-nav-btn"+((!showDashboard&&!showSocios&&!showPlan)?" active":"")} onClick={()=>{setShowDashboard(false);setShowSocios(false);setShowPlan(false);}}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
+          <button className={"global-nav-btn"+(showSocios?" active":"")} onClick={()=>{setShowSocios(true);setShowDashboard(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>🤝 Informe Socios</button>
+          <button className={"global-nav-btn"+(showPlan?" active":"")} onClick={()=>{setShowPlan(true);setShowDashboard(false);setShowSocios(false);if(!isMobile)setSelId(null);}}>🗓 Plan Semanal</button>
           <div className="global-search-wrap">
             <div className="global-search-box">
               <span className="global-search-icon">🔍</span>
@@ -2991,7 +3219,7 @@ function App({onSignOut, userEmail, accessToken}) {
                 return(
                   <div className="global-results">
                     {results.map((r,i)=>(
-                      <div key={i} className="global-result-item" onMouseDown={()=>{setSelId(r.projId);setShowDashboard(false);setShowSocios(false);setGlobalSearch("");setShowGlobalResults(false);}}>
+                      <div key={i} className="global-result-item" onMouseDown={()=>{setSelId(r.projId);setShowDashboard(false);setShowSocios(false);setShowPlan(false);setGlobalSearch("");setShowGlobalResults(false);}}>
                         <div className="global-result-proj">{r.projName}</div>
                         <div className="global-result-task">{r.tarea}</div>
                         <div className="global-result-act">{r.actName} · {r.responsable||"Sin asignar"}</div>
@@ -3042,7 +3270,7 @@ function App({onSignOut, userEmail, accessToken}) {
 
             {mobileShowProject&&<button className="mobile-back-btn" onClick={()=>setSelId(null)}>← Proyectos</button>}
             {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
-            <h2>{selProj?selProj.name:showSocios?"Informe Socios":isMobile?"Planificador":"Selecciona un proyecto"}</h2>
+            <h2>{selProj?selProj.name:showSocios?"Informe Socios":showPlan?"Plan Semanal":isMobile?"Planificador":"Selecciona un proyecto"}</h2>
             {selProj&&(()=>{
               const done=allTasks.filter(t=>t.estado==="Completado").length;
               const pct=allTasks.length>0?Math.round(done/allTasks.length*100):0;
@@ -3080,6 +3308,10 @@ function App({onSignOut, userEmail, accessToken}) {
             <DashboardView projects={projects.filter(p=>!p.archived)} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowDashboard(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):showSocios?(
             <SociosView projects={projects.filter(p=>!p.archived)} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowSocios(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
+          ):showPlan?(
+            planItems===null
+              ?<div style={{padding:50,textAlign:"center",color:"var(--ink3)",fontSize:13}}>Cargando plan semanal...</div>
+              :<PlanSemanalView items={planItems} onChange={updatePlan} projects={projects.filter(p=>!p.archived)} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowPlan(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):isMobile&&mobileShowList?(
             <>
               <div className="mobile-proj-list">
