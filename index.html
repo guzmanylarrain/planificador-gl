@@ -2183,7 +2183,7 @@ function PlanSemanalView({items,onChange,projects,onSelectTask}) {
     }
     return <span style={{fontSize:11.5,color:"var(--ink3)",lineHeight:1.35,display:"block"}}>{it.vinculoTexto||"—"}</span>;
   };
-  const grid="30px minmax(180px,1.2fr) minmax(220px,1.8fr) 148px repeat(5,30px) 46px 30px";
+  const grid="30px minmax(180px,1.2fr) minmax(220px,1.8fr) 148px repeat(5,30px) 60px 30px";
   const pct=list=>{const m=list.filter(i=>i.ppc===1||i.ppc===0);return m.length?Math.round(m.filter(i=>i.ppc===1).length/m.length*100):null;};
   const histWeeks=[...new Set(items.filter(i=>i.ppc===1||i.ppc===0).map(i=>i.semana))].sort().reverse().slice(0,12);
   const histResp=[...new Set(items.filter(i=>i.ppc===1||i.ppc===0).map(i=>i.responsable).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
@@ -2197,7 +2197,7 @@ function PlanSemanalView({items,onChange,projects,onSelectTask}) {
               <span>Semana Mi {fmtD(week)} → Ma {fmtD(planAddDays(week,6))}</span>
               <span style={{fontSize:13,fontWeight:600,fontFamily:"'IBM Plex Sans',sans-serif",background:"var(--bg)",border:"1px solid var(--line)",borderRadius:14,padding:"4px 12px",color:"var(--ink2)",letterSpacing:0.2}}>
                 <span style={{color:"var(--teal)",fontWeight:700}}>{weekItems.length}</span> compromiso{weekItems.length===1?"":"s"}
-                {ppcPct!==null&&<span style={{marginLeft:8,fontWeight:700,color:ppcPct>=80?"var(--green)":ppcPct>=50?"#b06f08":"var(--red)"}}>· PPC {ppcPct}% ({okCount}/{marked.length})</span>}
+                {ppcPct!==null&&<span style={{marginLeft:8,fontWeight:700,color:ppcPct>=80?"var(--green)":ppcPct>=50?"#b06f08":"var(--red)"}}>· Cumplimiento {ppcPct}% ({okCount}/{marked.length})</span>}
               </span>
             </div>
             <div className="inf-subtitle">{dateStr}</div>
@@ -2213,7 +2213,7 @@ function PlanSemanalView({items,onChange,projects,onSelectTask}) {
               <option value="">Todos los responsables</option>
               {respAll.map(r=><option key={r} value={r}>{r}</option>)}
             </select>
-            <button className={"inf-toggle"+(showHist?" on":"")} onClick={()=>setShowHist(s=>!s)}>📈 Historial PPC</button>
+            <button className={"inf-toggle"+(showHist?" on":"")} onClick={()=>setShowHist(s=>!s)}>📈 Historial de cumplimiento</button>
           </div>
         </div>
       </div>
@@ -2229,7 +2229,7 @@ function PlanSemanalView({items,onChange,projects,onSelectTask}) {
 
       {showHist&&(
         <div style={{background:"var(--white)",border:"1px solid var(--line)",borderRadius:10,padding:"14px 16px",marginBottom:16,overflowX:"auto"}}>
-          <div style={{fontSize:12.5,fontWeight:700,color:"var(--ink2)",marginBottom:10}}>📈 PPC por responsable — últimas {histWeeks.length} semanas con datos</div>
+          <div style={{fontSize:12.5,fontWeight:700,color:"var(--ink2)",marginBottom:10}}>📈 % de cumplimiento por responsable — últimas {histWeeks.length} semanas con datos</div>
           <table style={{borderCollapse:"collapse",fontSize:12,minWidth:480}}>
             <thead><tr>
               <th style={{textAlign:"left",padding:"4px 10px 4px 0",color:"var(--ink3)",fontWeight:700}}>Semana</th>
@@ -2289,7 +2289,7 @@ function PlanSemanalView({items,onChange,projects,onSelectTask}) {
             <div style={{display:"grid",gridTemplateColumns:grid,gap:6,alignItems:"center",background:"var(--ink)",color:"#c0bdb6",fontSize:10.5,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,padding:"9px 12px"}}>
               <div>N°</div><div>Proyecto // Actividad // Tarea</div><div>Compromiso</div><div>Responsable</div>
               {PLAN_DIAS.map(([k,l])=><div key={k} style={{textAlign:"center"}}>{l}</div>)}
-              <div style={{textAlign:"center"}}>PPC</div><div/>
+              <div style={{textAlign:"center"}}>Cumpl.</div><div/>
             </div>
             {weekItems.length===0&&<div style={{padding:"18px 16px",color:"var(--ink3)",fontSize:13,fontStyle:"italic"}}>Sin compromisos esta semana. Agrega el primero arriba.</div>}
             {weekItems.map((it,idx)=>(
