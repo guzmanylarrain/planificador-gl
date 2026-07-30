@@ -619,26 +619,47 @@ class SupabaseClient {
     this.key = key;
     this.h = {"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key};
   }
+  // Toda petición REST pasa por _req: si el token venció (401), se renueva solo y se reintenta.
+  async _req(path, opts={}) {
+    const build=()=>({method:opts.method||"GET",headers:{...this.h,...(opts.headers||{})},...(opts.body!==undefined?{body:opts.body}:{})});
+    let res = await fetch(`${this.url}${path}`, build());
+    if(res.status===401 && this.refreshToken){
+      try { await this._refresh(); res = await fetch(`${this.url}${path}`, build()); } catch(e){}
+    }
+    return res;
+  }
+  async _refresh() {
+    if(this._refreshing) return this._refreshing;
+    this._refreshing = (async()=>{
+      if(this.readLatestRefresh){ const rt=this.readLatestRefresh(); if(rt) this.refreshToken=rt; }
+      if(!this.refreshToken) throw new Error("Sin refresh token");
+      const res = await fetch(`${this.url}/auth/v1/token?grant_type=refresh_token`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":this.key},
+        body:JSON.stringify({refresh_token:this.refreshToken})
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error_description||data.msg||`HTTP ${res.status}`);
+      this.setAuthToken(data.access_token);
+      this.refreshToken = data.refresh_token || this.refreshToken;
+      if(this.onSessionRefresh) this.onSessionRefresh(data);
+      return data;
+    })();
+    try { return await this._refreshing; }
+    finally { this._refreshing = null; }
+  }
   async select(table, filter="") {
-    const res = await fetch(`${this.url}/rest/v1/${table}${filter?"?"+filter:""}`, {headers:this.h});
+    const res = await this._req(`/rest/v1/${table}${filter?"?"+filter:""}`);
     if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return res.json();
   }
   async upsert(table, body) {
-    const res = await fetch(`${this.url}/rest/v1/${table}`, {
-      method:"POST",
-      headers:{...this.h,"Prefer":"resolution=merge-duplicates,return=minimal"},
-      body:JSON.stringify(body)
-    });
+    const res = await this._req(`/rest/v1/${table}`, {method:"POST",headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(body)});
     if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return true;
   }
   async insert(table, body) {
-    const res = await fetch(`${this.url}/rest/v1/${table}`, {
-      method:"POST",
-      headers:{...this.h,"Prefer":"return=minimal"},
-      body:JSON.stringify(body)
-    });
+    const res = await this._req(`/rest/v1/${table}`, {method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify(body)});
     if(!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
     return true;
   }
@@ -686,6 +707,10 @@ class SupabaseClient {
   }
   setAuthToken(token) {
     this.h = {"Content-Type":"application/json","apikey":this.key,"Authorization":"Bearer "+token};
+  }
+  setSession(token, refreshToken) {
+    this.setAuthToken(token);
+    this.refreshToken = refreshToken || null;
   }
 }
 
@@ -3190,6 +3215,7 @@ function App({onSignOut, userEmail, accessToken}) {
       <div style={{fontSize:20,fontWeight:700,color:"var(--red)"}}>Error de conexión</div>
       <div style={{color:"var(--ink2)",maxWidth:360}}>No se pudo conectar a la base de datos después de varios intentos. Por favor, desconéctate y vuelve a conectarte.</div>
       <button className="btn btn-primary" onClick={()=>{
+        localStorage.removeItem("gl_session");
         sessionStorage.removeItem("gl_session");
         window.location.reload();
       }}>Desconectar y reconectar</button>
@@ -3549,8 +3575,8 @@ function LoginScreen({onLogin}) {
       const client = new SupabaseClient(u, k);
       const session = await client.signIn(email.trim().toLowerCase(), password);
       const token = session.access_token;
-      const userData = { email: session.user?.email, token, expires: session.expires_at };
-      sessionStorage.setItem("gl_session", JSON.stringify(userData));
+      const userData = { email: session.user?.email, token, refresh: session.refresh_token, expires: session.expires_at };
+      localStorage.setItem("gl_session", JSON.stringify(userData));
       onLogin(userData);
     } catch(e) {
       setError(e.message || "Correo o contraseña incorrectos");
@@ -3684,7 +3710,7 @@ function Root() {
   const [recoveryToken, setRecoveryToken] = useState(() => parseRecoveryHash()?.accessToken || null);
 
   const [session, setSession] = useState(()=>{
-    try { return JSON.parse(sessionStorage.getItem("gl_session")||"null"); } catch{ return null; }
+    try { return JSON.parse(localStorage.getItem("gl_session")||sessionStorage.getItem("gl_session")||"null"); } catch{ return null; }
   });
   const [ready, setReady] = useState(false);
 
@@ -3693,19 +3719,39 @@ function Root() {
     localStorage.setItem("pl_url", SUPA_URL);
     localStorage.setItem("pl_key", SUPA_KEY);
     db = new SupabaseClient(SUPA_URL, SUPA_KEY);
-    if(session?.token) db.setAuthToken(session.token);
+    // Sesión persistente: el token se renueva solo (401 → refresh → reintento) y el token
+    // rotado se guarda en localStorage para que todas las pestañas usen siempre el más nuevo.
+    db.onSessionRefresh = (d)=>{
+      try{
+        const cur = JSON.parse(localStorage.getItem("gl_session")||"null")||{};
+        localStorage.setItem("gl_session", JSON.stringify({...cur, token:d.access_token, refresh:d.refresh_token||cur.refresh, expires:d.expires_at||cur.expires}));
+      }catch(e){}
+    };
+    db.readLatestRefresh = ()=>{
+      try{ return (JSON.parse(localStorage.getItem("gl_session")||"null")||{}).refresh||null; }catch(e){ return null; }
+    };
+    if(session?.token) db.setSession(session.token, session.refresh);
     setReady(true);
+    // Renovación preventiva: si al token le quedan <10 min, se renueva antes de que falle nada
+    const t=setInterval(()=>{
+      try{
+        const cur = JSON.parse(localStorage.getItem("gl_session")||"null");
+        if(cur?.refresh && cur?.expires && (cur.expires*1000 - Date.now()) < 10*60*1000) db._refresh().catch(()=>{});
+      }catch(e){}
+    }, 5*60*1000);
+    return ()=>clearInterval(t);
   },[session]);
 
   const handleSetup=(u,k)=>{db=new SupabaseClient(u,k);setReady(true);};
 
   const handleLogin=(userData)=>{
     setSession(userData);
-    if(db) db.setAuthToken(userData.token);
+    if(db) db.setSession(userData.token, userData.refresh);
   };
 
   const handleSignOut=async()=>{
     try{ if(db&&session?.token) await db.signOut(session.token); }catch(e){}
+    localStorage.removeItem("gl_session");
     sessionStorage.removeItem("gl_session");
     setSession(null);
   };
@@ -3714,6 +3760,7 @@ function Root() {
   if(!ready && !localStorage.getItem("pl_url")) return <SetupScreen onSetup={handleSetup}/>;
   // User arrived from a password recovery email — show reset screen (takes priority over existing session)
   if(recoveryToken) return <ResetPasswordScreen accessToken={recoveryToken} onDone={()=>{
+    localStorage.removeItem("gl_session");
     sessionStorage.removeItem("gl_session");
     setSession(null);
     setRecoveryToken(null);
