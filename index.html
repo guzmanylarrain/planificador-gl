@@ -315,8 +315,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .mobile-proj-list{display:block}
   .mobile-header{display:block}
 
-  /* Hide timeline and kanban tabs on mobile */
-  .proj-tab-timeline,.proj-tab-kanban{display:none!important}
+  /* Hide timeline tab on mobile */
+  .proj-tab-timeline{display:none!important}
 
   /* Filters stack vertically */
   .filter-bar{flex-direction:column;gap:8px}
@@ -541,23 +541,6 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 }
 .inf-empty{text-align:center;color:var(--ink3);font-size:13px;padding:40px 20px;font-style:italic}
 
-/* ── KANBAN ──────────────────────────────────────────────────────────────── */
-.kanban-wrap{display:flex;gap:14px;padding:4px 2px 20px;overflow-x:auto;height:100%;align-items:flex-start}
-.kanban-col{flex:0 0 230px;background:var(--bg2);border-radius:10px;padding:12px 10px;display:flex;flex-direction:column;gap:8px;min-height:200px;transition:background 0.15s}
-.kanban-col.drag-over{background:var(--teal-lt);outline:2px dashed var(--teal)}
-.kanban-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px}
-.kanban-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px}
-.kanban-col-count{font-size:11px;color:var(--ink3);background:var(--white);padding:1px 7px;border-radius:10px;font-weight:600}
-.kanban-card{background:var(--white);border-radius:8px;padding:10px 12px;box-shadow:var(--shadow);cursor:grab;border-left:3px solid var(--line);transition:box-shadow 0.15s,transform 0.1s;user-select:none}
-.kanban-card:active{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,0.15);transform:scale(1.02)}
-.kanban-card.dragging{opacity:0.5}
-.kanban-card-task{font-size:12px;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:5px}
-.kanban-card-act{font-size:10px;color:var(--ink3);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kanban-card-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.kanban-card-prio{font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px}
-.kanban-card-resp{font-size:10px;color:var(--ink3)}
-.kanban-card-date{font-size:10px;color:var(--red);font-weight:600}
-.kanban-card-is{font-size:9px;color:var(--teal);font-weight:700}
 
 
 /* ── LOGIN SCREEN ────────────────────────────────────────────────────────── */
@@ -1595,7 +1578,9 @@ function exportPDF(projects) {
   
   let totalTasks=0,doneTasks=0,overdueTasks=0;
   const now=new Date().toISOString().slice(0,10);
-  projects.forEach(p=>(p.activities||[]).forEach(a=>(a.tasks||[]).forEach(t=>{
+  // Mismo criterio que el resto de la app: solo tareas "activas" (con fechas), para que el
+  // porcentaje del PDF coincida con el del Dashboard y el de cada proyecto.
+  projects.forEach(p=>(p.activities||[]).forEach(a=>(a.tasks||[]).filter(isTaskActive).forEach(t=>{
     totalTasks++;
     if(t.estado==="Completado")doneTasks++;
     if(t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<now)overdueTasks++;
@@ -2618,84 +2603,6 @@ function DashboardView({projects, onSelectProject, onSelectTask}) {
   );
 }
 
-// ── KANBAN VIEW ──────────────────────────────────────────────────────────────
-const KANBAN_COLS = [
-  {id:"Pendiente",label:"Pendiente",color:"#8a8780"},
-  {id:"En Proceso",label:"En Proceso",color:"#1a5f6e"},
-  {id:"Completado",label:"Completado",color:"#1a7a4a"},
-  {id:"Bloqueado",label:"Bloqueado",color:"#c0392b"},
-];
-const PRIO_COLORS={1:"#c0392b",2:"#b7620a",3:"#8a8780"};
-const PRIO_LABELS={1:"Alta",2:"Media",3:"Baja"};
-
-function KanbanView({project, onUpdateTask, onAuditLog}) {
-  const [dragging, setDragging] = useState(null); // {taskId, actId}
-  const [dragOver, setDragOver] = useState(null);
-  const today = new Date().toISOString().slice(0,10);
-
-  const allTasks = (project.activities||[]).flatMap(a=>
-    a.tasks.filter(isTaskActive).map(t=>({...t, actId:a.id, actName:a.name}))
-  );
-
-  const tasksByStatus = KANBAN_COLS.reduce((acc,col)=>{
-    acc[col.id]=allTasks.filter(t=>t.estado===col.id);
-    return acc;
-  },{});
-
-  const handleDragStart=(e,taskId,actId)=>{
-    setDragging({taskId,actId});
-    e.dataTransfer.effectAllowed="move";
-  };
-  const handleDragOver=(e,colId)=>{e.preventDefault();setDragOver(colId);};
-  const handleDrop=(e,newStatus)=>{
-    e.preventDefault();
-    if(!dragging)return;
-    const task=allTasks.find(t=>t.id===dragging.taskId);
-    const updates={estado:newStatus};
-    if(newStatus==="Completado"&&!task.fechaTerminoR) updates.fechaTerminoR=today;
-    onUpdateTask(dragging.actId, {...task,...updates}, `Tarea "${task.tarea}" → ${newStatus}`);
-    if(onAuditLog)onAuditLog("tarea_modificada",`Tarea "${task.tarea}" movida a ${newStatus}`);
-    setDragging(null);setDragOver(null);
-  };
-
-  return(
-    <div className="kanban-wrap">
-      {KANBAN_COLS.map(col=>(
-        <div key={col.id} className={"kanban-col"+(dragOver===col.id?" drag-over":"")}
-          onDragOver={e=>handleDragOver(e,col.id)}
-          onDragLeave={()=>setDragOver(null)}
-          onDrop={e=>handleDrop(e,col.id)}>
-          <div className="kanban-col-header">
-            <span className="kanban-col-title" style={{color:col.color}}>{col.label}</span>
-            <span className="kanban-col-count">{tasksByStatus[col.id].length}</span>
-          </div>
-          {tasksByStatus[col.id].map(t=>{
-            const overdue=t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today;
-            return(
-              <div key={t.id} className={"kanban-card"+(dragging?.taskId===t.id?" dragging":"")}
-                style={{borderLeftColor:col.color}}
-                draggable
-                onDragStart={e=>handleDragStart(e,t.id,t.actId)}>
-                <div className="kanban-card-task">{t.tarea}</div>
-                <div className="kanban-card-act">{t.actName}</div>
-                <div className="kanban-card-footer">
-                  <span className="kanban-card-prio" style={{background:PRIO_COLORS[normPrio(t.prioridad)]+"22",color:PRIO_COLORS[normPrio(t.prioridad)]}}>P{normPrio(t.prioridad)} {PRIO_LABELS[normPrio(t.prioridad)]}</span>
-                  {t.responsable&&<span className="kanban-card-resp">👤 {t.responsable.split(" ")[0]}</span>}
-                  {t.fechaTerminoE&&<span className="kanban-card-date">{overdue?"⚠ ":""}{t.fechaTerminoE.slice(5).replace("-","/")}</span>}
-                  {t.informeSocio&&<span className="kanban-card-is">📋 IS</span>}
-                </div>
-              </div>
-            );
-          })}
-          {tasksByStatus[col.id].length===0&&(
-            <div style={{textAlign:"center",color:"var(--ink3)",fontSize:11,padding:"20px 0",fontStyle:"italic"}}>Sin tareas</div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── MOBILE PROJECT LIST ──────────────────────────────────────────────────────
 function MobileProjectList({projects, onSelect}) {
   const [search, setSearch] = React.useState("");
@@ -2950,13 +2857,18 @@ function App({onSignOut, userEmail, accessToken}) {
   const pollTimer=useRef(null);
   const lastServerUpdated=useRef(null);
   const pendingSave=useRef(false);
+  // Para no pisar el trabajo de otra persona: registro qué proyectos toqué yo desde el último guardado
+  const dirtyProjects=useRef(new Set());
+  const deletedProjects=useRef(new Set());
   const auditRef=useRef(null);
   const errorCount=useRef(0);
   const [fatalConnError,setFatalConnError]=useState(false);
 
   // Apply tipo from Excel lookup to any task missing it
+  // La tabla de tipos venía incrustada en el HTML; se quitó por seguridad (los datos ya están en la base).
   const applyTipoLookup=(projects)=>{
-    const lk=window.TIPO_LOOKUP||{};
+    const lk=window.TIPO_LOOKUP;
+    if(!lk) return projects;
     return projects.map(p=>({...p,activities:(p.activities||[]).map(a=>({...a,tasks:a.tasks.map(t=>{
       if(t.tipo)return t;
       const key=`${p.name}||${a.name}||${t.tarea}`;
@@ -2970,10 +2882,9 @@ function App({onSignOut, userEmail, accessToken}) {
     try {
       const rows=await db.select("planificador","id=eq.main");
       if(rows.length===0){
-        const now=new Date().toISOString();
-        await db.upsert("planificador",{id:"main",data:window.INITIAL_DATA,updated_at:now});
-        lastServerUpdated.current=now;
-        setProjects(applyTipoLookup(window.INITIAL_DATA));
+        // NUNCA sembrar datos automáticamente: "no veo nada" puede ser un problema de permisos o de
+        // sesión, y escribir aquí reemplazaría TODA la base por una copia vacía/vieja. Fallamos y avisamos.
+        throw new Error("La base no devolvió datos. No se escribe nada por seguridad.");
       } else {
         const serverTime=rows[0].updated_at;
         const newData=rows[0].data;
@@ -3004,6 +2915,8 @@ function App({onSignOut, userEmail, accessToken}) {
     return()=>clearInterval(pollTimer.current);
   },[loadData]);
 
+  // Guardado con FUSIÓN por proyecto: si otra persona modificó OTRO proyecto mientras yo editaba,
+  // su cambio se conserva. Solo se sobrescriben los proyectos que yo toqué.
   const saveProjects=useCallback((newProjects)=>{
     if(!db)return;
     clearTimeout(saveTimer.current);
@@ -3011,9 +2924,28 @@ function App({onSignOut, userEmail, accessToken}) {
     setSyncStatus("syncing");
     saveTimer.current=setTimeout(async()=>{
       try {
+        let toWrite=newProjects;
+        try {
+          const rows=await db.select("planificador","id=eq.main");
+          if(rows.length>0 && rows[0].updated_at!==lastServerUpdated.current){
+            // Alguien guardó mientras yo editaba → fusiono en vez de pisar
+            const server=rows[0].data||[];
+            const dirty=dirtyProjects.current, deleted=deletedProjects.current;
+            const mine=new Map(newProjects.map(p=>[p.id,p]));
+            const merged=server
+              .filter(p=>!deleted.has(p.id))
+              .map(p=>(dirty.has(p.id)&&mine.has(p.id))?mine.get(p.id):p);
+            const serverIds=new Set(server.map(p=>p.id));
+            for(const p of newProjects) if(!serverIds.has(p.id)&&!deleted.has(p.id)) merged.push(p);
+            toWrite=merged;
+            setProjects(applyTipoLookup(toWrite));
+          }
+        } catch(e){ console.error("Fusion previa al guardado",e); }
         const now=new Date().toISOString();
-        await db.upsert("planificador",{id:"main",data:newProjects,updated_at:now});
+        await db.upsert("planificador",{id:"main",data:toWrite,updated_at:now});
         lastServerUpdated.current=now;
+        dirtyProjects.current=new Set();
+        deletedProjects.current=new Set();
         pendingSave.current=false;
         setSyncStatus("connected");
         setLastSync(new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}));
@@ -3022,7 +2954,7 @@ function App({onSignOut, userEmail, accessToken}) {
   },[]);
 
   const updateProjects=p=>{setProjects(p);saveProjects(p);};
-  const updBitacora=(pid,fn)=>updateProjects(projects.map(p=>p.id===pid?{...p,bitacora:fn(p.bitacora||[])}:p));
+  const updBitacora=(pid,fn)=>{dirtyProjects.current.add(pid);updateProjects(projects.map(p=>p.id===pid?{...p,bitacora:fn(p.bitacora||[])}:p));};
 
   // Plan Semanal (PUEDE): carga al abrir la pestaña, polling 10s mientras esté abierta, guardado con debounce
   const loadPlan=useCallback(async(silent=false)=>{
@@ -3086,12 +3018,13 @@ function App({onSignOut, userEmail, accessToken}) {
     return()=>clearInterval(t);
   },[loadAuditLogs]);
 
-  const updActs=(pid,fn)=>updateProjects(projects.map(p=>p.id===pid?{...p,activities:fn(p.activities)}:p));
+  const updActs=(pid,fn)=>{dirtyProjects.current.add(pid);updateProjects(projects.map(p=>p.id===pid?{...p,activities:fn(p.activities)}:p));};
   const addProject=()=>{
     const city=(newProjCity==="otra"?newProjCustomCity:newProjCity).trim();
     if(!city||!newProjName.trim())return;
     const fullName=`${city} - ${newProjName.trim()}`;
     const p={id:uid(),name:fullName,color:newProjColor,activities:buildSipocActivities()};
+    dirtyProjects.current.add(p.id);
     updateProjects([...projects,p]);setSelId(p.id);
     logAudit("nuevo_proyecto",`Nuevo proyecto creado: "${fullName}" (base SIPOC aplicada)`,fullName);
     setShowNewProj(false);setNewProjName("");setNewProjCity("");setNewProjCustomCity("");
@@ -3144,11 +3077,13 @@ function App({onSignOut, userEmail, accessToken}) {
       return;
     }
     const remaining=projects.filter(p=>p.id!==pid);
+    deletedProjects.current.add(pid);
     updateProjects(remaining);
     if(proj)logAudit("eliminar_proyecto",`Proyecto eliminado: "${proj.name}" (respaldo guardado)`,proj.name);
     if(selId===pid)setSelId(remaining.length>0?remaining[0].id:null);
   };
   const archiveProject=(pid)=>{
+    dirtyProjects.current.add(pid);
     updateProjects(projects.map(p=>p.id===pid?{...p,archived:!p.archived}:p));
     // If the selected project is being archived, deselect it
     if(selId===pid){
