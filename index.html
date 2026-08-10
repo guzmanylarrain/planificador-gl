@@ -3561,9 +3561,27 @@ function LoginScreen({onLogin}) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const emailRef = React.useRef();
 
   useEffect(()=>{ if(emailRef.current) emailRef.current.focus(); },[]);
+
+  // Recuperar contraseña: envía un correo con enlace para que el propio usuario cree una nueva
+  const handleReset = async () => {
+    const u = localStorage.getItem("pl_url");
+    const k = localStorage.getItem("pl_key");
+    if(!u||!k) { setError("Primero configura las credenciales de Supabase."); return; }
+    if(!email.trim()) { setError("Escribe tu correo arriba y vuelve a tocar el enlace."); return; }
+    setLoading(true); setError(""); setNotice("");
+    try {
+      const client = new SupabaseClient(u, k);
+      await client.requestPasswordReset(email.trim().toLowerCase(), window.location.origin+window.location.pathname);
+      setNotice("Listo: te enviamos un correo con el enlace para crear una contraseña nueva. Revisa tu bandeja de entrada y la carpeta de spam.");
+    } catch(e) {
+      setError(e.message||"No se pudo enviar el correo de recuperación.");
+    }
+    setLoading(false);
+  };
 
   const handleLogin = async () => {
     const u = localStorage.getItem("pl_url");
@@ -3609,6 +3627,13 @@ function LoginScreen({onLogin}) {
             {loading?"Verificando...":"Ingresar →"}
           </button>
           <div className="login-error">{error}</div>
+          {notice&&<div style={{color:"#1a7a4a",fontSize:12,fontWeight:600,background:"#eef7f1",border:"1px solid #cbe6d6",borderRadius:6,padding:"9px 12px",marginTop:8,lineHeight:1.45}}>{notice}</div>}
+          <div style={{textAlign:"center",marginTop:12}}>
+            <button type="button" onClick={handleReset} disabled={loading}
+              style={{background:"none",border:"none",color:"#1a5f6e",fontSize:12,fontWeight:600,cursor:loading?"not-allowed":"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit"}}>
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
         </div>
         <div className="login-footer">
           Acceso exclusivo para usuarios autorizados<br/>
