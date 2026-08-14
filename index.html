@@ -714,6 +714,8 @@ const STATUS_OPTS = ["Pendiente","Completado"];
 // Incluye mapeo de estados legacy por si aparecen datos viejos — se muestran pero no se pueden elegir
 const STATUS_CLASS = {"Pendiente":"s-pending","Completado":"s-done","En Proceso":"s-pending","Bloqueado":"s-pending"};
 const COLORS = ["#1a5f6e","#6e3a1a","#1a6e3a","#6e1a5f","#1a3a6e","#b7620a","#3a1a6e","#c0392b","#2e7d32","#0277bd","#6a1b9a","#ad1457","#00695c","#4527a0","#558b2f","#e65100"];
+// Color del borde izquierdo según prioridad (1 Alta, 2 Media, 3 Baja). Lo usa la vista Informe.
+const PRIO_COLORS={1:"#c0392b",2:"#b7620a",3:"#8a8780"};
 const RESPONSABLES = ["Mario Martinez","Victoria Gaete","Christian Scheel","Ana Maria Jara","Catalina Lopez","Nelson Gonzalez","Domingo Mackenna","Francisco Silva","Rodrigo Ibarra","Rodrigo Meyer","Nicolas Guzman"];
 
 // ── SIPOC TEMPLATE ──────────────────────────────────────────────────────────
