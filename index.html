@@ -2882,6 +2882,22 @@ function App({onSignOut, userEmail, accessToken}) {
     if(!db)return;
     if(!silent)setSyncStatus("syncing");
     try {
+      // Sondeo barato: en modo silencioso pedimos SOLO updated_at (unos pocos bytes) y
+      // bajamos el blob completo (~2 MB) unicamente si alguien cambio algo. Sin esto cada
+      // pestana abierta descargaba 2 MB cada 10 s y disparaba el egress de Supabase.
+      if(silent){
+        const head=await db.select("planificador","id=eq.main&select=updated_at");
+        if(head.length===0){
+          throw new Error("La base no devolvio datos. No se escribe nada por seguridad.");
+        }
+        if(pendingSave.current||head[0].updated_at===lastServerUpdated.current){
+          errorCount.current=0;
+          setSyncStatus("connected");
+          setLastSync(new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}));
+          setLoading(false);
+          return;
+        }
+      }
       const rows=await db.select("planificador","id=eq.main");
       if(rows.length===0){
         // NUNCA sembrar datos automáticamente: "no veo nada" puede ser un problema de permisos o de
@@ -2913,8 +2929,13 @@ function App({onSignOut, userEmail, accessToken}) {
   useEffect(()=>{
     if(!db){setLoading(false);return;}
     loadData();
-    pollTimer.current=setInterval(()=>loadData(true),10000);
-    return()=>clearInterval(pollTimer.current);
+    // Se mantiene el refresco cada 10 s (el ahorro de trafico lo da el sondeo de updated_at,
+    // no el intervalo), pero solo con la pestana visible: una pestana olvidada de noche ya no
+    // genera trafico. Al volver a la pestana se refresca de inmediato.
+    pollTimer.current=setInterval(()=>{if(!document.hidden)loadData(true);},10000);
+    const onVis=()=>{if(!document.hidden)loadData(true);};
+    document.addEventListener("visibilitychange",onVis);
+    return()=>{clearInterval(pollTimer.current);document.removeEventListener("visibilitychange",onVis);};
   },[loadData]);
 
   // Guardado con FUSIÓN por proyecto: si otra persona modificó OTRO proyecto mientras yo editaba,
@@ -2962,6 +2983,12 @@ function App({onSignOut, userEmail, accessToken}) {
   const loadPlan=useCallback(async(silent=false)=>{
     if(!db)return;
     try{
+      // Mismo sondeo barato que en loadData: primero updated_at, el blob solo si cambio.
+      if(silent){
+        const head=await db.select("plan_semanal","id=eq.main&select=updated_at");
+        if(head.length===0)return;
+        if(planPending.current||head[0].updated_at===planLastUpd.current)return;
+      }
       const rows=await db.select("plan_semanal","id=eq.main");
       if(rows.length===0){setPlanItems(p=>p||[]);return;}
       if(!silent||(!planPending.current&&rows[0].updated_at!==planLastUpd.current)){
@@ -2973,8 +3000,10 @@ function App({onSignOut, userEmail, accessToken}) {
   useEffect(()=>{if(showPlan&&planItems===null)loadPlan();},[showPlan,planItems,loadPlan]);
   useEffect(()=>{
     if(!showPlan)return;
-    const t=setInterval(()=>loadPlan(true),10000);
-    return()=>clearInterval(t);
+    const t=setInterval(()=>{if(!document.hidden)loadPlan(true);},10000);
+    const onVis=()=>{if(!document.hidden)loadPlan(true);};
+    document.addEventListener("visibilitychange",onVis);
+    return()=>{clearInterval(t);document.removeEventListener("visibilitychange",onVis);};
   },[showPlan,loadPlan]);
   const updatePlan=(newItems)=>{
     setPlanItems(newItems);
