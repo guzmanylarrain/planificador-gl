@@ -3522,11 +3522,11 @@ function App({onSignOut, userEmail, accessToken}) {
 
 
 // ── LOGIN SCREEN ─────────────────────────────────────────────────────────────
-function LoginScreen({onLogin}) {
+function LoginScreen({onLogin, initialError=""}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
   const [notice, setNotice] = useState("");
   const emailRef = React.useRef();
 
@@ -3541,7 +3541,7 @@ function LoginScreen({onLogin}) {
     setLoading(true); setError(""); setNotice("");
     try {
       const client = new SupabaseClient(u, k);
-      await client.requestPasswordReset(email.trim().toLowerCase(), window.location.origin+window.location.pathname);
+      await client.requestPasswordReset(email.trim().toLowerCase(), appUrl());
       setNotice("Listo: te enviamos un correo con el enlace para crear una contraseña nueva. Revisa tu bandeja de entrada y la carpeta de spam.");
     } catch(e) {
       setError(e.message||"No se pudo enviar el correo de recuperación.");
@@ -3685,12 +3685,33 @@ function ResetPasswordScreen({accessToken, onDone}) {
   );
 }
 
+// URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
+// de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
+// redirect_to=https://guzmanylarrain.github.io/ y el enlace del correo cayo en un 404 de GitHub
+// Pages. Fuera de github.io (desarrollo local) si se usa la URL de la pestana.
+function appUrl() {
+  if(window.location.hostname.endsWith("github.io")) return "https://guzmanylarrain.github.io/planificador-gl/";
+  return window.location.origin+window.location.pathname;
+}
+
 function parseRecoveryHash() {
   const h = window.location.hash;
   if(!h||h.length<2) return null;
   const p = new URLSearchParams(h.slice(1));
   if(p.get("type")==="recovery" && p.get("access_token")) return {accessToken:p.get("access_token")};
+  // Supabase redirige con #error=...&error_code=otp_expired cuando el enlace vencio o ya se uso
+  if(p.get("error")) return {error:p.get("error_code")||p.get("error")};
   return null;
+}
+
+// Texto para el login cuando se llega desde un enlace de recuperacion fallido; limpia el hash
+// para que un F5 no vuelva a mostrarlo
+function recoveryErrorMessage(code) {
+  if(!code) return "";
+  history.replaceState(null, "", window.location.pathname+window.location.search);
+  return code==="otp_expired"
+    ? "El enlace de recuperación venció o ya fue usado. Pide uno nuevo con «¿Olvidaste tu contraseña?»."
+    : "El enlace de recuperación no es válido. Pide uno nuevo con «¿Olvidaste tu contraseña?».";
 }
 
 function Root() {
@@ -3699,6 +3720,7 @@ function Root() {
   const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcGhqcm52ZGpwY2hjZWttcWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjk4MDMsImV4cCI6MjA4ODc0NTgwM30.b4yjMjfsdHYCrF-UK1Gzbjszm420I1WYjE4hjOid90M";
 
   const [recoveryToken, setRecoveryToken] = useState(() => parseRecoveryHash()?.accessToken || null);
+  const [recoveryError] = useState(() => recoveryErrorMessage(parseRecoveryHash()?.error));
 
   const [session, setSession] = useState(()=>{
     try { return JSON.parse(localStorage.getItem("gl_session")||sessionStorage.getItem("gl_session")||"null"); } catch{ return null; }
@@ -3757,7 +3779,7 @@ function Root() {
     setRecoveryToken(null);
   }}/>;
   // Credentials exist but not logged in
-  if(!session) return <LoginScreen onLogin={handleLogin}/>;
+  if(!session) return <LoginScreen onLogin={handleLogin} initialError={recoveryError}/>;
   // Need to setup db first
   if(!ready) return <SetupScreen onSetup={handleSetup}/>;
   return <App onSignOut={handleSignOut} userEmail={session.email} accessToken={session.token}/>;
