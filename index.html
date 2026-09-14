@@ -3544,7 +3544,10 @@ function LoginScreen({onLogin, initialError=""}) {
       await client.requestPasswordReset(email.trim().toLowerCase(), appUrl());
       setNotice("Listo: te enviamos un correo con el enlace para crear una contraseña nueva. Revisa tu bandeja de entrada y la carpeta de spam.");
     } catch(e) {
-      setError(e.message||"No se pudo enviar el correo de recuperación.");
+      const m = String(e.message||"");
+      // El correo gratuito de Supabase permite pocos envios por hora; si se pasa, responde 429
+      if(/rate limit|over_email/i.test(m)) setError("Se pidieron demasiados correos en la última hora y Supabase dejó de enviarlos. Espera una hora y vuelve a intentar, o pide al administrador que te asigne una contraseña temporal.");
+      else setError(m||"No se pudo enviar el correo de recuperación.");
     }
     setLoading(false);
   };
