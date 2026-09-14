@@ -670,10 +670,14 @@ class SupabaseClient {
     });
   }
   async requestPasswordReset(email, redirectTo) {
-    const res = await fetch(`${this.url}/auth/v1/recover`, {
+    // redirect_to va como parametro de la URL, no en el cuerpo JSON: GoTrue no lo lee del JSON
+    // y en ese caso usa el encabezado Referer, que el navegador manda sin la ruta
+    // (https://guzmanylarrain.github.io/), y el enlace del correo caia en un 404 (14-sep-2026).
+    const q = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : "";
+    const res = await fetch(`${this.url}/auth/v1/recover${q}`, {
       method:"POST",
       headers:{"Content-Type":"application/json","apikey":this.key},
-      body:JSON.stringify({email, ...(redirectTo?{redirect_to:redirectTo}:{})})
+      body:JSON.stringify({email})
     });
     if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error_description||d.msg||`HTTP ${res.status}`); }
     return true;
@@ -3691,7 +3695,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-09-14c";
+const APP_VERSION = "2026-09-14d";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
