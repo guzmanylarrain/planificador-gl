@@ -3606,7 +3606,8 @@ function LoginScreen({onLogin, initialError=""}) {
         </div>
         <div className="login-footer">
           Acceso exclusivo para usuarios autorizados<br/>
-          Guzmán &amp; Larraín Empresas
+          Guzmán &amp; Larraín Empresas<br/>
+          <span style={{opacity:0.55}}>versión {APP_VERSION}</span>
         </div>
       </div>
     </div>
@@ -3687,6 +3688,10 @@ function ResetPasswordScreen({accessToken, onDone}) {
     </div>
   );
 }
+
+// Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
+// viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
+const APP_VERSION = "2026-09-14c";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
