@@ -3049,8 +3049,12 @@ function App({onSignOut, userEmail, accessToken}) {
 
   useEffect(()=>{
     if(db){loadAuditLogs();}
-    const t=setInterval(()=>{if(db)loadAuditLogs();},30000);
-    return()=>clearInterval(t);
+    // Solo con la pestana visible (igual que loadData/loadPlan): una pestana minimizada todo el
+    // dia hacia ~2.900 descargas del historial sin que nadie lo mirara (16-sep-2026).
+    const t=setInterval(()=>{if(db&&!document.hidden)loadAuditLogs();},30000);
+    const onVis=()=>{if(db&&!document.hidden)loadAuditLogs();};
+    document.addEventListener("visibilitychange",onVis);
+    return()=>{clearInterval(t);document.removeEventListener("visibilitychange",onVis);};
   },[loadAuditLogs]);
 
   const updActs=(pid,fn)=>{dirtyProjects.current.add(pid);updateProjects(projects.map(p=>p.id===pid?{...p,activities:fn(p.activities)}:p));};
@@ -3695,7 +3699,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-09-14d";
+const APP_VERSION = "2026-09-16a";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
