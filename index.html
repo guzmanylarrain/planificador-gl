@@ -774,6 +774,32 @@ const buildSipocActivities = () => SIPOC_TEMPLATE.map(a => ({
   ]
 }));
 
+// Completa un proyecto con las actividades de la plantilla que le falten, SIN borrar ni tocar
+// las existentes (a diferencia de "Aplicar SIPOC", que reemplaza todo). Una actividad existente
+// cuenta como de la plantilla si se llama igual, con o sin codigo ("Anteproyecto Municipal" o
+// "A-30 Anteproyecto Municipal"); se conserva entera y solo se le antepone el codigo si le falta,
+// para que caiga en su seccion. Queda en el orden de la plantilla; las actividades propias del
+// proyecto que no estan en la plantilla van al final, en su orden original.
+const completeSipocActivities = (acts) => {
+  const used = new Set();
+  const out = [];
+  let added = 0, renamed = 0;
+  for (const a of SIPOC_TEMPLATE) {
+    const full = `${a.code} ${a.name}`;
+    const ex = acts.find(x => !used.has(x) && (x.name === full || x.name === a.name));
+    if (ex) {
+      used.add(ex);
+      if (ex.name !== full) renamed++;
+      out.push(ex.name === full ? ex : {...ex, name: full});
+    } else {
+      added++;
+      out.push({id: uid(), name: full, tasks: [...a.tareas.map(t => sipocTaskTpl(t,"T")), ...a.restricciones.map(r => sipocTaskTpl(r,"R"))]});
+    }
+  }
+  for (const x of acts) if (!used.has(x)) out.push(x);
+  return {activities: out, added, renamed};
+};
+
 const getCity = name => name.split(" - ")[0].trim();
 const getShortName = name => { const parts = name.split(" - "); return parts.length > 1 ? parts.slice(1).join(" - ") : name; };
 const normPrio = p => (p>=1 && p<=3) ? p : 3;
@@ -3091,6 +3117,22 @@ function App({onSignOut, userEmail, accessToken}) {
     if(proj)logAudit("aplicar_sipoc",`SIPOC aplicado al proyecto: "${proj.name}" (actividades reemplazadas — respaldo guardado)`,proj.name);
     setShowApplySipoc(false);
   };
+  const completeSipoc=async()=>{
+    if(!selId)return;
+    const proj=projects.find(p=>p.id===selId);
+    if(!proj)return;
+    const {added}=completeSipocActivities(proj.activities||[]);
+    if(added===0){alert("Este proyecto ya tiene todas las actividades de la plantilla SIPOC.");return;}
+    if(!confirm(`Se agregarán ${added} actividades vacías de la plantilla SIPOC a "${proj.name}".\n\nLas actividades que ya existen NO se borran ni se modifican (solo se les agrega el código si les falta, para ordenarlas en su sección).\n\nSe guarda un respaldo antes. ¿Continuar?`))return;
+    try{
+      await saveSnapshot("completar_sipoc",proj);
+    }catch(e){
+      alert("⚠ No se pudo crear el respaldo de seguridad antes de completar SIPOC.\n\nPor seguridad, la acción fue CANCELADA (no se cambió nada). Revisa tu conexión e intenta de nuevo.\n\nDetalle: "+(e.message||e));
+      return;
+    }
+    updActs(selId,acts=>completeSipocActivities(acts||[]).activities);
+    logAudit("completar_sipoc",`Plantilla SIPOC completada en "${proj.name}": ${added} actividades agregadas (las existentes se mantuvieron — respaldo guardado)`,proj.name);
+  };
   const submitChangePw=async()=>{
     setChangePwError("");
     if(changePwNew.length<12){setChangePwError("La contraseña debe tener al menos 12 caracteres.");return;}
@@ -3339,6 +3381,7 @@ function App({onSignOut, userEmail, accessToken}) {
                   {stats["Completado"]>0&&<span style={{color:"var(--green)",fontWeight:600,fontSize:12}}>{stats["Completado"]} ✓</span>}
                   {stats["Pendiente"]>0&&<span style={{color:"var(--ink3)",fontWeight:600,fontSize:12}}>{stats["Pendiente"]} pendientes</span>}
                 </div>
+                {completeSipocActivities(selProj.activities||[]).added>0&&<button className="btn btn-outline btn-sm" onClick={completeSipoc} title="Agrega las actividades de la plantilla que faltan, sin borrar ni modificar las existentes">➕ Completar SIPOC</button>}
                 <button className="btn btn-outline btn-sm" onClick={()=>setShowApplySipoc(true)} title="Reemplaza todas las actividades con la plantilla SIPOC">🔄 Aplicar SIPOC</button>
                 <button className="btn btn-primary btn-sm" onClick={()=>setShowNewAct(true)}>+ Nueva Actividad</button>
               </>
@@ -3699,7 +3742,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-09-16a";
+const APP_VERSION = "2026-10-05a";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
