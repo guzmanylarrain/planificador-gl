@@ -801,6 +801,10 @@ const completeSipocActivities = (acts) => {
 };
 
 const getCity = name => name.split(" - ")[0].trim();
+// Orden fijo de ciudades (norte a sur): Arica, Iquique, Antofagasta, Maipú; cualquier otra ciudad va alfabética al final.
+// Lo usan la barra lateral y el selector de la pestaña Informe, para que muestren el mismo orden.
+const CITY_ORDER = ["Arica","Iquique","Antofagasta","Maipú"];
+const compareCities = (a,b) => ((CITY_ORDER.indexOf(a)<0?99:CITY_ORDER.indexOf(a))-(CITY_ORDER.indexOf(b)<0?99:CITY_ORDER.indexOf(b))) || a.localeCompare(b,'es');
 const getShortName = name => { const parts = name.split(" - "); return parts.length > 1 ? parts.slice(1).join(" - ") : name; };
 const normPrio = p => (p>=1 && p<=3) ? p : 3;
 // Una tarea/restricción está "activa" (entra en dashboards/informes) si tiene las fechas necesarias.
@@ -899,9 +903,7 @@ function CitySidebar({projects, selId, onSelect, onDeleteProject, onArchiveProje
   }
   // Orden alfabético de los proyectos dentro de cada ciudad (numérico: "Lote 2" antes que "Lote 10")
   for(const city of cityOrder) cityMap[city].sort((a,b)=>getShortName(a.name).localeCompare(getShortName(b.name),'es',{numeric:true}));
-  // Orden fijo de ciudades (norte a sur): Arica, Iquique, Antofagasta, Maipú; cualquier otra ciudad va alfabética al final
-  const CITY_ORDER = ["Arica","Iquique","Antofagasta","Maipú"];
-  cityOrder.sort((a,b)=>((CITY_ORDER.indexOf(a)<0?99:CITY_ORDER.indexOf(a))-(CITY_ORDER.indexOf(b)<0?99:CITY_ORDER.indexOf(b))) || a.localeCompare(b,'es'));
+  cityOrder.sort(compareCities);
 
   const toggle = city => setOpenCities(prev => ({...prev, [city]: !prev[city]}));
 
@@ -980,6 +982,12 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
   const [newLogText,setNewLogText]=useState("");
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const [saveError,setSaveError]=useState("");
+  // La casilla "Informe Socios" se guarda al instante, sin "Guardar". Solo guarda ESE campo sobre la
+  // tarea ya guardada: los demás cambios del formulario siguen esperando "Guardar" (y su validación).
+  const toggleInformeSocio=(checked)=>{
+    set("informeSocio",checked);
+    onUpdate(actId,{...task,informeSocio:checked},`Tarea "${task.tarea}" — ${checked?"agregada a":"quitada de"} Informe Socios`);
+  };
   const saveAndClose=()=>{
     const missing=[];
     if(!form.responsable)missing.push("Responsable");
@@ -1186,7 +1194,7 @@ function TaskRow({task,actId,onUpdate,onDelete,globalIdx,onAuditLog,currentUserN
             </div>
             <div className="detail-field" style={{gridColumn:"1/-1"}}>
               <label style={{display:"flex",alignItems:"center",gap:9,cursor:"pointer",userSelect:"none"}}>
-                <input type="checkbox" checked={!!form.informeSocio} onChange={e=>set("informeSocio",e.target.checked)}
+                <input type="checkbox" checked={!!form.informeSocio} onChange={e=>toggleInformeSocio(e.target.checked)}
                   style={{width:16,height:16,accentColor:"var(--teal)",cursor:"pointer",flexShrink:0}}/>
                 <span style={{fontSize:13,fontWeight:600,color:"var(--ink)"}}>📋 Informe Socios</span>
                 <span style={{fontSize:11,color:"var(--ink3)",fontStyle:"italic"}}>— incluir en reporte a socios</span>
@@ -3400,8 +3408,8 @@ function App({onSignOut, userEmail, accessToken}) {
           ):showSocios?(
             <SociosView projects={projects.filter(p=>!p.archived)} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowSocios(false);setShowInforme(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):showInforme?(()=>{
-            const opts=projects.filter(p=>!p.archived).sort((a,b)=>a.name.localeCompare(b.name,'es',{numeric:true}));
-            const cities=[...new Set(opts.map(p=>getCity(p.name)))];
+            const opts=projects.filter(p=>!p.archived).sort((a,b)=>getShortName(a.name).localeCompare(getShortName(b.name),'es',{numeric:true}));
+            const cities=[...new Set(opts.map(p=>getCity(p.name)))].sort(compareCities);
             const ip=opts.find(p=>p.id===informeProjId);
             return(<>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18,flexWrap:"wrap"}}>
@@ -3770,7 +3778,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-10-28a";
+const APP_VERSION = "2026-10-28b";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
