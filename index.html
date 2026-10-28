@@ -428,6 +428,8 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .dash-overdue-info{flex:1;min-width:0}
 .dash-overdue-task{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash-overdue-proj{font-size:11px;color:var(--ink3)}
+.dash-overdue-resp{color:var(--ink2);font-weight:600}
+.dash-overdue-resp.none{color:var(--ink3);font-weight:400;font-style:italic}
 .dash-filter-row{display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap}
 .dash-filter-row select{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--ink);outline:none;cursor:pointer}
 .dash-filter-row select:focus{border-color:var(--teal)}
@@ -540,6 +542,66 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
   .inf-tbl-head > div,.inf-tbl-row > div{padding:7px 9px}
 }
 .inf-empty{text-align:center;color:var(--ink3);font-size:13px;padding:40px 20px;font-style:italic}
+
+/* ── INFORME SOCIOS: vista de documento, sobria, para proyectar en la reunión ── */
+.soc-wrap{padding:30px 44px 72px;overflow-y:auto;height:100%}
+.soc-doc{max-width:1120px}
+.soc-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:28px;border-bottom:1px solid var(--ink)}
+.soc-eyebrow{font-size:11px;font-weight:600;letter-spacing:2.2px;text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
+.soc-title{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;color:var(--ink);line-height:1.15}
+.soc-date{font-size:13.5px;color:var(--ink2);margin-top:9px}
+.soc-summary{font-size:13px;color:var(--ink3);margin-top:3px}
+.soc-summary b{font-weight:600;color:var(--ink)}
+.soc-summary .over,.soc-proj-stats .over,.soc-act-count .over{color:var(--red);font-weight:600}
+.soc-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-bottom:2px}
+.soc-link{background:none;border:none;padding:4px 7px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+.soc-link:hover{color:var(--teal);text-decoration-color:var(--teal)}
+.soc-tools-sep{width:1px;height:16px;background:var(--line);margin:0 6px}
+.soc-proj{margin-bottom:38px}
+.soc-proj-hdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:4px 0 10px;border-bottom:1px solid var(--ink);cursor:pointer;user-select:none}
+.soc-arrow{font-size:9px;color:var(--ink3);transition:transform 0.15s;width:11px;flex-shrink:0;align-self:center;display:inline-block}
+.soc-arrow.open{transform:rotate(90deg)}
+.soc-proj-name{font-family:'Libre Baskerville',serif;font-size:20px;font-weight:700;color:var(--ink);line-height:1.2}
+.soc-proj-city{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:var(--ink3)}
+.soc-proj-stats{margin-left:auto;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.soc-act{margin-top:20px}
+.soc-act-hdr{display:flex;align-items:center;gap:10px;padding:0 0 7px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+.soc-act-name{font-size:12px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2)}
+.soc-act-count{font-size:11.5px;color:var(--ink3)}
+.soc-row{display:grid;grid-template-columns:minmax(0,1fr) 180px;column-gap:32px;padding:17px 0;border-bottom:1px solid var(--line)}
+.soc-row:last-child{border-bottom:none}
+.soc-task{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.soc-tipo{font-size:10.5px;font-weight:600;letter-spacing:0.6px;color:var(--ink3);border:1px solid var(--line);border-radius:3px;padding:1px 6px;line-height:1.4;flex-shrink:0;min-width:22px;text-align:center}
+.soc-task-name{font-size:15px;font-weight:600;color:var(--ink);line-height:1.4}
+.soc-task-name.clickable{cursor:pointer}
+.soc-task-name.clickable:hover{color:var(--teal)}
+.soc-ed{font-size:10px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:1px 8px;line-height:1.5}
+.soc-note{margin-top:9px;font-size:14.5px;line-height:1.65;color:var(--ink);max-width:78ch}
+.soc-note-date{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:0.5px;color:var(--ink3);margin-right:10px;font-variant-numeric:tabular-nums;vertical-align:1px}
+.soc-note-empty{margin-top:7px;font-size:13px;color:var(--ink3);font-style:italic}
+.soc-note-more{background:none;border:none;padding:0;margin-top:9px;font-size:12.5px;color:var(--teal);cursor:pointer;font-family:inherit;display:block;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(26,95,110,0.35)}
+.soc-note-prev{margin-top:12px;padding-left:14px;border-left:2px solid var(--line)}
+.soc-note-prev .soc-note{margin-top:10px;font-size:13.5px;color:var(--ink2)}
+.soc-note-prev .soc-note:first-child{margin-top:0}
+.soc-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right;font-size:13px;color:var(--ink2);padding-top:3px}
+.soc-resp{font-weight:600;color:var(--ink)}
+.soc-resp.none{color:var(--ink3);font-weight:400;font-style:italic}
+.soc-fecha{font-variant-numeric:tabular-nums}
+.soc-fecha.overdue{color:var(--red);font-weight:600}
+.soc-fecha.soon{color:var(--amber);font-weight:600}
+.soc-fecha.done{color:var(--green);font-weight:600}
+.soc-fecha-sub{font-size:11.5px;color:var(--ink3);margin-top:-3px}
+.soc-fecha.overdue + .soc-fecha-sub{color:var(--red)}
+.soc-estado{font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);margin-top:2px}
+.soc-estado.done{color:var(--green)}
+.soc-empty{padding:56px 20px;text-align:center;color:var(--ink3);font-size:14px;font-style:italic;max-width:60ch;margin:0 auto;line-height:1.6}
+@media(max-width:900px){
+  .soc-wrap{padding:20px 18px 48px}
+  .soc-title{font-size:23px}
+  .soc-row{grid-template-columns:1fr;padding:14px 0}
+  .soc-meta{flex-direction:row;align-items:center;gap:6px 16px;text-align:left;margin-top:10px;flex-wrap:wrap;padding-top:0}
+  .soc-fecha-sub{margin-top:0}
+}
 
 
 
@@ -2082,77 +2144,121 @@ function InfTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
 }
 
 // ── INFORME SOCIOS (panel global: solo tareas marcadas IS) ───────────────────
-function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
-  const [open,setOpen]=useState(false);
-  const p=item.proj;
-  const short=p.name.split(" - ").slice(1).join(" - ")||p.name;
-  const city=p.name.split(" - ")[0].trim();
+// Vista propia, distinta del informe por proyecto: es la que se proyecta en la reunión de
+// socios. Tipografía de documento (serif en títulos, reglas finas, sin barras oscuras ni
+// pastillas de color) y la bitácora en cuerpo grande para que se lea de lejos. Comparte la
+// lógica de datos con InformeView pero no sus componentes, para poder afinarla por separado.
+function SociosTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
+  const [expand,setExpand]=React.useState(false);
+  const isDone=t.estado==="Completado";
+  const isOver=!isDone&&!!t.fechaTerminoE&&t.fechaTerminoE<today;
+  const isSoon=!isOver&&!isDone&&!!t.fechaTerminoE&&t.fechaTerminoE<=sevenStr&&t.fechaTerminoE>=today;
+  const logs=(t.log||[]).filter(l=>l&&l.text);
+  const last=logs.length>0?logs[logs.length-1]:null;
+  const prev=logs.length>1?[...logs].reverse().slice(1):[];
   return(
-    <div style={{marginBottom:12,borderRadius:10,overflow:"hidden",border:"1px solid var(--line)",boxShadow:"var(--shadow)"}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:11,padding:"13px 18px",cursor:"pointer",background:"var(--ink)",userSelect:"none",flexWrap:"wrap"}}>
-        <span style={{color:"#888",fontSize:10,transform:open?"rotate(90deg)":"",transition:"transform 0.2s",display:"inline-block"}}>▶</span>
-        <span style={{width:10,height:10,borderRadius:"50%",background:p.color,flexShrink:0,display:"inline-block"}}/>
-        <span style={{fontFamily:"Georgia,serif",fontSize:15.5,fontWeight:700,color:"#f4f2ed"}}>{short}</span>
-        <span style={{fontSize:10.5,color:"#8a8780",textTransform:"uppercase",letterSpacing:1.2}}>{city}</span>
-        <span style={{marginLeft:"auto",fontSize:11.5,fontWeight:600,background:"rgba(255,255,255,0.1)",color:"#c0bdb6",borderRadius:10,padding:"2px 10px",flexShrink:0}}>{item.nTasks} tarea{item.nTasks!==1?"s":""}</span>
-        {item.nOver>0&&<span style={{fontSize:11.5,fontWeight:700,background:"rgba(192,57,43,0.25)",color:"#f0a99e",borderRadius:10,padding:"2px 10px",flexShrink:0}}>⏱ {item.nOver} atrasada{item.nOver!==1?"s":""}</span>}
-      </div>
-      {open&&(
-        <div className="inf-tbl" style={{border:0,borderRadius:0,boxShadow:"none"}}>
-          <div className="inf-tbl-head">
-            <div>Tarea / Restricción</div>
-            <div style={{textAlign:"center"}}>Tipo</div>
-            <div>Descripción</div>
-            <div>Responsable</div>
-            <div>Fecha Término (E)</div>
-            <div>Estado</div>
-          </div>
-          {item.groups.map(g=><InfActGroup key={g.actName} group={g} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={tid=>onSelectTask(p.id,tid)}/>)}
+    <div className={"soc-row"+(isOver?" overdue":"")}>
+      <div>
+        <div className="soc-task">
+          <span className="soc-tipo" title={t.tipo==="T"?"Tarea":t.tipo==="R"?"Restricción":"Sin tipo"}>{t.tipo||"—"}</span>
+          <span className={"soc-task-name"+(onSelectTask?" clickable":"")} onClick={onSelectTask?(()=>onSelectTask(t.id)):undefined} title={onSelectTask?"Ver/editar en Actividades":""}>{t.tarea}</span>
+          {(t.edificio==="Cayman"||t.edificio==="Jamaica")&&<span className="soc-ed">{t.edificio}</span>}
         </div>
-      )}
+        {last?(
+          <>
+            <div className="soc-note">{last.date&&<span className="soc-note-date">{fmtDate(last.date)}</span>}{last.text}</div>
+            {prev.length>0&&<button className="soc-note-more" onClick={()=>setExpand(v=>!v)}>{expand?"Ocultar comentarios anteriores":`Ver ${prev.length} comentario${prev.length===1?"":"s"} anterior${prev.length===1?"":"es"}`}</button>}
+            {expand&&prev.length>0&&(
+              <div className="soc-note-prev">
+                {prev.map((l,i)=><div key={i} className="soc-note">{l.date&&<span className="soc-note-date">{fmtDate(l.date)}</span>}{l.text}</div>)}
+              </div>
+            )}
+          </>
+        ):<div className="soc-note-empty">Sin bitácora</div>}
+      </div>
+      <div className="soc-meta">
+        <span className={"soc-resp"+(t.responsable?"":" none")}>{t.responsable||"Sin responsable"}</span>
+        {isDone&&t.fechaTerminoR?(
+          <><span className="soc-fecha done">✓ {fmtDate(t.fechaTerminoR)}</span><span className="soc-fecha-sub">Término real</span></>
+        ):t.fechaTerminoE?(
+          <>
+            <span className={"soc-fecha"+(isOver?" overdue":isSoon?" soon":"")}>{fmtDate(t.fechaTerminoE)}</span>
+            <span className="soc-fecha-sub">{isOver?`Atrasada · ${daysDiff(t.fechaTerminoE)}`:isSoon?"Vence esta semana":"Término estimado"}</span>
+          </>
+        ):<span className="soc-fecha-sub">Sin fecha</span>}
+        <span className={"soc-estado"+(isDone?" done":"")}>{t.estado}</span>
+      </div>
     </div>
+  );
+}
+
+function SociosActGroup({group,today,sevenStr,fmtDate,daysDiff,onSelectTask,allOpen}) {
+  const [open,setOpen]=React.useState(true);
+  React.useEffect(()=>{if(allOpen&&allOpen.k)setOpen(allOpen.v);},[allOpen]);
+  const nOver=group.tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length;
+  return(
+    <div className="soc-act">
+      <div className="soc-act-hdr" onClick={()=>setOpen(o=>!o)}>
+        <span className={"soc-arrow"+(open?" open":"")}>▶</span>
+        <span className="soc-act-name">{group.actName}</span>
+        <span className="soc-act-count">{group.tasks.length} {group.tasks.length===1?"tarea":"tareas"}{nOver>0&&<> · <span className="over">{nOver} atrasada{nOver===1?"":"s"}</span></>}</span>
+      </div>
+      {open&&group.tasks.map(t=><SociosTaskRow key={t.id} t={t} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask}/>)}
+    </div>
+  );
+}
+
+function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask,allOpen}) {
+  const [open,setOpen]=useState(true);
+  React.useEffect(()=>{if(allOpen&&allOpen.k)setOpen(allOpen.v);},[allOpen]);
+  const p=item.proj;
+  return(
+    <section className="soc-proj">
+      <div className="soc-proj-hdr" onClick={()=>setOpen(o=>!o)}>
+        <span className={"soc-arrow"+(open?" open":"")}>▶</span>
+        <span className="soc-proj-name">{getShortName(p.name)}</span>
+        <span className="soc-proj-city">{getCity(p.name)}</span>
+        <span className="soc-proj-stats">{item.nTasks} tarea{item.nTasks!==1?"s":""}{item.nOver>0&&<> · <span className="over">{item.nOver} atrasada{item.nOver!==1?"s":""}</span></>}</span>
+      </div>
+      {open&&item.groups.map(g=><SociosActGroup key={g.actName} group={g} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} allOpen={allOpen} onSelectTask={tid=>onSelectTask(p.id,tid)}/>)}
+    </section>
   );
 }
 
 function SociosView({projects,onSelectTask}) {
   const [filterStatus,setFilterStatus]=useState(["Pendiente"]);
+  // {v: abrir/cerrar, k: marca de tiempo} para que "Expandir/Contraer todo" dispare aunque se repita
+  const [allOpen,setAllOpen]=useState({v:true,k:0});
   const today=new Date().toISOString().slice(0,10);
   const sevenDays=new Date();sevenDays.setDate(sevenDays.getDate()+7);
   const sevenStr=sevenDays.toISOString().slice(0,10);
   const fmtDate=d=>{if(!d||d.length<8)return"—";const[y,m,day]=d.split("-");return`${day}/${m}/${y.slice(2)}`;};
   const daysDiff=d=>{const diff=Math.floor((new Date(today)-new Date(d))/864e5);return diff===0?"hoy":diff===1?"1 día":diff+" días";};
-  const dateStr=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
-  const CITY_ORDER=["Arica","Iquique","Antofagasta","Maipú"];
-  const getCity=n=>n.split(" - ")[0].trim();
-  const getShort=n=>n.split(" - ").slice(1).join(" - ")||n;
+  const raw=new Date().toLocaleDateString("es-CL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  const dateStr=raw.charAt(0).toUpperCase()+raw.slice(1);
   const items=projects.map(p=>{
     const groups=(p.activities||[]).map(a=>({actName:a.name,tasks:(a.tasks||[]).filter(t=>t.informeSocio&&(filterStatus.length===0||filterStatus.includes(t.estado)))})).filter(g=>g.tasks.length>0);
     const tasks=groups.flatMap(g=>g.tasks);
     return {proj:p,groups,nTasks:tasks.length,nOver:tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length};
   }).filter(x=>x.nTasks>0)
-  .sort((a,b)=>{
-    const ia=CITY_ORDER.indexOf(getCity(a.proj.name)), ib=CITY_ORDER.indexOf(getCity(b.proj.name));
-    return ((ia<0?99:ia)-(ib<0?99:ib))||getCity(a.proj.name).localeCompare(getCity(b.proj.name),'es')||getShort(a.proj.name).localeCompare(getShort(b.proj.name),'es',{numeric:true});
-  });
+  .sort((a,b)=>compareCities(getCity(a.proj.name),getCity(b.proj.name))||getShortName(a.proj.name).localeCompare(getShortName(b.proj.name),'es',{numeric:true}));
   const totTasks=items.reduce((s,x)=>s+x.nTasks,0);
   const totOver=items.reduce((s,x)=>s+x.nOver,0);
   return(
-    <div className="inf-wrap">
-      <div className="inf-header" style={{borderBottomColor:"var(--teal)"}}>
-        <div className="inf-header-top">
+    <div className="soc-wrap">
+      <div className="soc-doc">
+        <div className="soc-header">
           <div>
-            <div className="inf-eyebrow" style={{color:"var(--teal)"}}>Reunión de Socios</div>
-            <div className="inf-title" style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-              <span>Informe Socios</span>
-              <span style={{fontSize:13,fontWeight:600,fontFamily:"'IBM Plex Sans',sans-serif",background:"var(--bg)",border:"1px solid var(--line)",borderRadius:14,padding:"4px 12px",color:"var(--ink2)",letterSpacing:0.2}}>
-                <span style={{color:"var(--teal)",fontWeight:700}}>{items.length}</span> proyecto{items.length===1?"":"s"} · <span style={{color:"var(--teal)",fontWeight:700}}>{totTasks}</span> tarea{totTasks===1?"":"s"}
-                {totOver>0&&<span style={{color:"var(--red)",fontWeight:700,marginLeft:8}}>· {totOver} atrasada{totOver===1?"":"s"}</span>}
-              </span>
-            </div>
-            <div className="inf-subtitle">{dateStr} · Solo tareas marcadas 📋 Informe Socios</div>
+            <div className="soc-eyebrow">Reunión de Socios</div>
+            <div className="soc-title">Informe Socios</div>
+            <div className="soc-date">{dateStr}</div>
+            <div className="soc-summary"><b>{items.length}</b> proyecto{items.length===1?"":"s"} · <b>{totTasks}</b> tarea{totTasks===1?"":"s"}{totOver>0&&<> · <span className="over">{totOver} atrasada{totOver===1?"":"s"}</span></>} · Solo tareas marcadas para informe</div>
           </div>
-          <div className="inf-controls" style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-            <FilterMulti
+          <div className="soc-tools">
+            <button className="soc-link" onClick={()=>setAllOpen({v:true,k:Date.now()})}>Expandir todo</button>
+            <button className="soc-link" onClick={()=>setAllOpen({v:false,k:Date.now()})}>Contraer todo</button>
+            <span className="soc-tools-sep"/>
+            <FilterMulti quiet
               placeholder="Todos los estados"
               options={STATUS_OPTS.map(s=>({val:s,label:s}))}
               selected={filterStatus} onChange={setFilterStatus}
@@ -2162,10 +2268,10 @@ function SociosView({projects,onSelectTask}) {
             )}
           </div>
         </div>
+        {items.length===0?(
+          <div className="soc-empty">{filterStatus.length>0?"No hay tareas marcadas para Informe Socios con el estado seleccionado.":"No hay tareas marcadas para Informe Socios en ningún proyecto. Abre una tarea y activa la casilla 📋 Informe Socios para que aparezca aquí."}</div>
+        ):items.map(it=><SociosProjGroup key={it.proj.id} item={it} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} allOpen={allOpen} onSelectTask={onSelectTask}/>)}
       </div>
-      {items.length===0?(
-        <div className="inf-tbl-empty">{filterStatus.length>0?"No hay tareas marcadas 📋 Informe Socios con el estado seleccionado.":"No hay tareas marcadas con \"Informe Socios\" en ningún proyecto. Abre una tarea y activa el check 📋 Informe Socios para que aparezca aquí."}</div>
-      ):items.map(it=><SociosProjGroup key={it.proj.id} item={it} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} onSelectTask={onSelectTask}/>)}
     </div>
   );
 }
@@ -2576,7 +2682,7 @@ function DashboardView({projects, onSelectProject, onSelectTask}) {
               <span className="dash-overdue-days">{daysDiff(t.fechaTerminoE)}</span>
               <div className="dash-overdue-info">
                 <div className="dash-overdue-task">{t.tarea}</div>
-                <div className="dash-overdue-proj">{t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {t.actName} · {fmtShort(t.fechaTerminoE)}</div>
+                <div className="dash-overdue-proj"><span className={"dash-overdue-resp"+(t.responsable?"":" none")}>{t.responsable||"Sin responsable"}</span> · {t.projName.split(" - ").slice(1).join(" - ")||t.projName} · {t.actName} · {fmtShort(t.fechaTerminoE)}</div>
               </div>
             </div>
           ))}
@@ -2694,7 +2800,8 @@ function MobileProjectList({projects, onSelect}) {
 }
 
 // ── FILTER MULTI ──────────────────────────────────────────────────────────────
-function FilterMulti({options, selected, onChange, placeholder}) {
+// quiet: variante sobria (sin relleno teal) que muestra el nombre de lo elegido en vez de "N sel."
+function FilterMulti({options, selected, onChange, placeholder, quiet}) {
   const [open,setOpen]=React.useState(false);
   const ref=React.useRef(null);
   React.useEffect(()=>{
@@ -2703,11 +2810,12 @@ function FilterMulti({options, selected, onChange, placeholder}) {
     return()=>document.removeEventListener("mousedown",fn);
   },[]);
   const allSel=selected.length===0;
-  const label=allSel?placeholder:`${selected.length} sel.`;
+  const selLabels=selected.map(v=>(options.find(o=>o.val===v)||{}).label||v);
+  const label=allSel?placeholder:(quiet&&selLabels.length<=2?selLabels.join(" + "):`${selected.length} sel.`);
   const toggle=v=>onChange(selected.includes(v)?selected.filter(x=>x!==v):[...selected,v]);
   return(
     <div ref={ref} style={{position:"relative",flexShrink:0}}>
-      <button onClick={()=>setOpen(o=>!o)} className="filter-select" style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",background:!allSel?"var(--teal)":"",color:!allSel?"#fff":"",borderColor:!allSel?"var(--teal)":"",minWidth:130,justifyContent:"space-between"}}>
+      <button onClick={()=>setOpen(o=>!o)} className="filter-select" style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",background:(!allSel&&!quiet)?"var(--teal)":"",color:(!allSel&&!quiet)?"#fff":"",borderColor:!allSel?"var(--teal)":"",minWidth:130,justifyContent:"space-between"}}>
         <span>{label}</span>
         <span style={{fontSize:9,opacity:0.6}}>{open?"▲":"▼"}</span>
       </button>
@@ -3778,7 +3886,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-10-28b";
+const APP_VERSION = "2026-10-28c";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
