@@ -543,44 +543,54 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 }
 .inf-empty{text-align:center;color:var(--ink3);font-size:13px;padding:40px 20px;font-style:italic}
 
-/* ── INFORME SOCIOS: vista de documento, sobria, para proyectar en la reunión ── */
-.soc-wrap{padding:30px 44px 72px;overflow-y:auto;height:100%}
-.soc-doc{max-width:1120px}
-.soc-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:28px;border-bottom:1px solid var(--ink)}
+/* ── INFORME SOCIOS: recuadros por proyecto y por actividad, para proyectar en la reunión ── */
+.soc-wrap{padding:22px 10px 64px;overflow-y:auto;height:100%}
+.soc-doc{width:100%}
+.soc-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:22px;border-bottom:1px solid var(--ink)}
 .soc-eyebrow{font-size:11px;font-weight:600;letter-spacing:2.2px;text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
 .soc-title{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;color:var(--ink);line-height:1.15}
 .soc-date{font-size:13.5px;color:var(--ink2);margin-top:9px}
 .soc-summary{font-size:13px;color:var(--ink3);margin-top:3px}
 .soc-summary b{font-weight:600;color:var(--ink)}
-.soc-summary .over,.soc-proj-stats .over,.soc-act-count .over{color:var(--red);font-weight:600}
+.soc-summary .over,.soc-act-count .over{color:var(--red);font-weight:600}
 .soc-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-bottom:2px}
 .soc-link{background:none;border:none;padding:4px 7px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
 .soc-link:hover{color:var(--teal);text-decoration-color:var(--teal)}
 .soc-tools-sep{width:1px;height:16px;background:var(--line);margin:0 6px}
-.soc-proj{margin-bottom:38px}
-.soc-proj-hdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:4px 0 10px;border-bottom:1px solid var(--ink);cursor:pointer;user-select:none}
-.soc-arrow{font-size:9px;color:var(--ink3);transition:transform 0.15s;width:11px;flex-shrink:0;align-self:center;display:inline-block}
+/* Proyecto: tarjeta con cabecera oscura (misma familia visual que la barra lateral) */
+.soc-proj{background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden}
+.soc-proj-hdr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 20px;background:var(--ink);cursor:pointer;user-select:none}
+.soc-proj-hdr .soc-arrow{color:#8a8780}
+.soc-proj-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block}
+.soc-proj-name{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:700;color:#f4f2ed;line-height:1.2}
+.soc-proj-city{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:#9b9892}
+.soc-proj-stats{margin-left:auto;font-size:12.5px;color:#c0bdb6;white-space:nowrap}
+.soc-proj-stats .over{color:#f0a99e;font-weight:600}
+.soc-proj-body{padding:14px 16px 16px;background:var(--bg)}
+/* Actividad: recuadro interior con banda de título */
+.soc-act{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px;background:var(--white)}
+.soc-act:last-child{margin-bottom:0}
+.soc-act-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+.soc-act.closed .soc-act-hdr{border-bottom:none}
+.soc-arrow{font-size:9px;color:var(--ink3);transition:transform 0.15s;width:11px;flex-shrink:0;display:inline-block}
 .soc-arrow.open{transform:rotate(90deg)}
-.soc-proj-name{font-family:'Libre Baskerville',serif;font-size:20px;font-weight:700;color:var(--ink);line-height:1.2}
-.soc-proj-city{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:var(--ink3)}
-.soc-proj-stats{margin-left:auto;font-size:12.5px;color:var(--ink2);white-space:nowrap}
-.soc-act{margin-top:20px}
-.soc-act-hdr{display:flex;align-items:center;gap:10px;padding:0 0 7px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
-.soc-act-name{font-size:12px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink2)}
+.soc-act-name{font-size:12px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink)}
 .soc-act-count{font-size:11.5px;color:var(--ink3)}
-.soc-row{display:grid;grid-template-columns:minmax(0,1fr) 180px;column-gap:32px;padding:17px 0;border-bottom:1px solid var(--line)}
+/* Tarea: fila a lo ancho, bitácora grande, meta a la derecha */
+.soc-row{display:grid;grid-template-columns:minmax(0,1fr) 200px;column-gap:32px;padding:15px 18px 16px;border-bottom:1px solid var(--line)}
 .soc-row:last-child{border-bottom:none}
+.soc-row.overdue{box-shadow:inset 3px 0 0 var(--red)}
 .soc-task{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
 .soc-tipo{font-size:10.5px;font-weight:600;letter-spacing:0.6px;color:var(--ink3);border:1px solid var(--line);border-radius:3px;padding:1px 6px;line-height:1.4;flex-shrink:0;min-width:22px;text-align:center}
 .soc-task-name{font-size:15px;font-weight:600;color:var(--ink);line-height:1.4}
 .soc-task-name.clickable{cursor:pointer}
 .soc-task-name.clickable:hover{color:var(--teal)}
 .soc-ed{font-size:10px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:1px 8px;line-height:1.5}
-.soc-note{margin-top:9px;font-size:14.5px;line-height:1.65;color:var(--ink);max-width:78ch}
+.soc-note{margin-top:8px;font-size:14.5px;line-height:1.65;color:var(--ink)}
 .soc-note-date{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:0.5px;color:var(--ink3);margin-right:10px;font-variant-numeric:tabular-nums;vertical-align:1px}
 .soc-note-empty{margin-top:7px;font-size:13px;color:var(--ink3);font-style:italic}
-.soc-note-more{background:none;border:none;padding:0;margin-top:9px;font-size:12.5px;color:var(--teal);cursor:pointer;font-family:inherit;display:block;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(26,95,110,0.35)}
-.soc-note-prev{margin-top:12px;padding-left:14px;border-left:2px solid var(--line)}
+.soc-note-more{background:none;border:none;padding:0;margin-top:8px;font-size:12.5px;color:var(--teal);cursor:pointer;font-family:inherit;display:block;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(26,95,110,0.35)}
+.soc-note-prev{margin-top:11px;padding-left:14px;border-left:2px solid var(--line)}
 .soc-note-prev .soc-note{margin-top:10px;font-size:13.5px;color:var(--ink2)}
 .soc-note-prev .soc-note:first-child{margin-top:0}
 .soc-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right;font-size:13px;color:var(--ink2);padding-top:3px}
@@ -596,9 +606,11 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .soc-estado.done{color:var(--green)}
 .soc-empty{padding:56px 20px;text-align:center;color:var(--ink3);font-size:14px;font-style:italic;max-width:60ch;margin:0 auto;line-height:1.6}
 @media(max-width:900px){
-  .soc-wrap{padding:20px 18px 48px}
+  .soc-wrap{padding:14px 2px 48px}
   .soc-title{font-size:23px}
-  .soc-row{grid-template-columns:1fr;padding:14px 0}
+  .soc-proj-hdr{padding:11px 14px}
+  .soc-proj-body{padding:10px}
+  .soc-row{grid-template-columns:1fr;padding:13px 14px}
   .soc-meta{flex-direction:row;align-items:center;gap:6px 16px;text-align:left;margin-top:10px;flex-wrap:wrap;padding-top:0}
   .soc-fecha-sub{margin-top:0}
 }
@@ -2185,7 +2197,7 @@ function SociosTaskRow({t,today,sevenStr,fmtDate,daysDiff,onSelectTask}) {
             <span className={"soc-fecha"+(isOver?" overdue":isSoon?" soon":"")}>{fmtDate(t.fechaTerminoE)}</span>
             <span className="soc-fecha-sub">{isOver?`Atrasada · ${daysDiff(t.fechaTerminoE)}`:isSoon?"Vence esta semana":"Término estimado"}</span>
           </>
-        ):<span className="soc-fecha-sub">Sin fecha</span>}
+        ):t.tipo==="R"?null:<span className="soc-fecha-sub">Sin fecha</span>}
         <span className={"soc-estado"+(isDone?" done":"")}>{t.estado}</span>
       </div>
     </div>
@@ -2197,7 +2209,7 @@ function SociosActGroup({group,today,sevenStr,fmtDate,daysDiff,onSelectTask,allO
   React.useEffect(()=>{if(allOpen&&allOpen.k)setOpen(allOpen.v);},[allOpen]);
   const nOver=group.tasks.filter(t=>t.estado!=="Completado"&&t.fechaTerminoE&&t.fechaTerminoE<today).length;
   return(
-    <div className="soc-act">
+    <div className={"soc-act"+(open?"":" closed")}>
       <div className="soc-act-hdr" onClick={()=>setOpen(o=>!o)}>
         <span className={"soc-arrow"+(open?" open":"")}>▶</span>
         <span className="soc-act-name">{group.actName}</span>
@@ -2216,11 +2228,16 @@ function SociosProjGroup({item,today,sevenStr,fmtDate,daysDiff,onSelectTask,allO
     <section className="soc-proj">
       <div className="soc-proj-hdr" onClick={()=>setOpen(o=>!o)}>
         <span className={"soc-arrow"+(open?" open":"")}>▶</span>
+        <span className="soc-proj-dot" style={{background:p.color}}/>
         <span className="soc-proj-name">{getShortName(p.name)}</span>
         <span className="soc-proj-city">{getCity(p.name)}</span>
         <span className="soc-proj-stats">{item.nTasks} tarea{item.nTasks!==1?"s":""}{item.nOver>0&&<> · <span className="over">{item.nOver} atrasada{item.nOver!==1?"s":""}</span></>}</span>
       </div>
-      {open&&item.groups.map(g=><SociosActGroup key={g.actName} group={g} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} allOpen={allOpen} onSelectTask={tid=>onSelectTask(p.id,tid)}/>)}
+      {open&&(
+        <div className="soc-proj-body">
+          {item.groups.map(g=><SociosActGroup key={g.actName} group={g} today={today} sevenStr={sevenStr} fmtDate={fmtDate} daysDiff={daysDiff} allOpen={allOpen} onSelectTask={tid=>onSelectTask(p.id,tid)}/>)}
+        </div>
+      )}
     </section>
   );
 }
@@ -3886,7 +3903,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-10-28c";
+const APP_VERSION = "2026-10-28d";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
