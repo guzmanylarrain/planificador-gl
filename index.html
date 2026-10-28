@@ -2861,6 +2861,11 @@ function App({onSignOut, userEmail, accessToken}) {
   const [showDashboard,setShowDashboard]=useState(false);
   const [showSocios,setShowSocios]=useState(false);
   const [showPlan,setShowPlan]=useState(false);
+  // Pestaña global "Informe": el mismo informe de cada proyecto, eligiendo el proyecto arriba.
+  // Recuerda el último proyecto elegido en este navegador.
+  const [showInforme,setShowInforme]=useState(false);
+  const [informeProjId,setInformeProjId]=useState(()=>{try{return localStorage.getItem("gl_informe_proj")||null;}catch{return null;}});
+  useEffect(()=>{try{if(informeProjId)localStorage.setItem("gl_informe_proj",informeProjId);}catch{}},[informeProjId]);
   const [planItems,setPlanItems]=useState(null);
   const planSaveTimer=useRef(null);
   const planPending=useRef(false);
@@ -3255,7 +3260,7 @@ function App({onSignOut, userEmail, accessToken}) {
           <div style={{fontSize:10,color:"#5a5750",textTransform:"uppercase",letterSpacing:1.5,borderTop:"1px solid rgba(255,255,255,0.07)",paddingTop:8}}>Planificador de Proyectos</div>
         </div>
         <div className="sidebar-section">Proyectos — por ciudad</div>
-        <CitySidebar projects={projects} selId={selId} onSelect={id=>{setSelId(id);setShowDashboard(false);setShowSocios(false);setShowPlan(false);}} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
+        <CitySidebar projects={projects} selId={selId} onSelect={id=>{setSelId(id);setShowDashboard(false);setShowSocios(false);setShowInforme(false);setShowPlan(false);}} onDeleteProject={deleteProject} onArchiveProject={archiveProject}/>
         <div className="sidebar-bottom">
           <button className="sidebar-btn sbtn-new" onClick={()=>setShowNewProj(true)}>+ Nuevo Proyecto</button>
           <button className="sidebar-btn sbtn-export" onClick={()=>exportCSV(projects.filter(p=>!p.archived))}>⬇ Exportar CSV</button>
@@ -3281,10 +3286,11 @@ function App({onSignOut, userEmail, accessToken}) {
 
       <div className="main">
         <div className="global-nav">
-          <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);setShowSocios(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
-          <button className={"global-nav-btn"+((!showDashboard&&!showSocios&&!showPlan)?" active":"")} onClick={()=>{setShowDashboard(false);setShowSocios(false);setShowPlan(false);}}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
-          <button className={"global-nav-btn"+(showSocios?" active":"")} onClick={()=>{setShowSocios(true);setShowDashboard(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>🤝 Informe Socios</button>
-          <button className={"global-nav-btn"+(showPlan?" active":"")} onClick={()=>{setShowPlan(true);setShowDashboard(false);setShowSocios(false);if(!isMobile)setSelId(null);}}>🗓 Plan Semanal</button>
+          <button className={"global-nav-btn"+(showDashboard?" active":"")} onClick={()=>{setShowDashboard(true);setShowSocios(false);setShowInforme(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>📊 Dashboard</button>
+          <button className={"global-nav-btn"+((!showDashboard&&!showSocios&&!showPlan&&!showInforme)?" active":"")} onClick={()=>{setShowDashboard(false);setShowSocios(false);setShowInforme(false);setShowPlan(false);}}>{selProj?`📋 ${selProj.name.split(" - ").slice(1).join(" - ")||selProj.name}`:"📋 Proyectos"}</button>
+          <button className={"global-nav-btn"+(showInforme?" active":"")} onClick={()=>{if(selId)setInformeProjId(selId);setShowInforme(true);setShowDashboard(false);setShowSocios(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>📄 Informe</button>
+          <button className={"global-nav-btn"+(showSocios?" active":"")} onClick={()=>{setShowSocios(true);setShowInforme(false);setShowDashboard(false);setShowPlan(false);if(!isMobile)setSelId(null);}}>🤝 Informe Socios</button>
+          <button className={"global-nav-btn"+(showPlan?" active":"")} onClick={()=>{setShowPlan(true);setShowDashboard(false);setShowSocios(false);setShowInforme(false);if(!isMobile)setSelId(null);}}>🗓 Plan Semanal</button>
           <div className="global-search-wrap">
             <div className="global-search-box">
               <span className="global-search-icon">🔍</span>
@@ -3303,7 +3309,7 @@ function App({onSignOut, userEmail, accessToken}) {
                 return(
                   <div className="global-results">
                     {results.map((r,i)=>(
-                      <div key={i} className="global-result-item" onMouseDown={()=>{setSelId(r.projId);setShowDashboard(false);setShowSocios(false);setShowPlan(false);setGlobalSearch("");setShowGlobalResults(false);}}>
+                      <div key={i} className="global-result-item" onMouseDown={()=>{setSelId(r.projId);setShowDashboard(false);setShowSocios(false);setShowInforme(false);setShowPlan(false);setGlobalSearch("");setShowGlobalResults(false);}}>
                         <div className="global-result-proj">{r.projName}</div>
                         <div className="global-result-task">{r.tarea}</div>
                         <div className="global-result-act">{r.actName} · {r.responsable||"Sin asignar"}</div>
@@ -3354,7 +3360,7 @@ function App({onSignOut, userEmail, accessToken}) {
 
             {mobileShowProject&&<button className="mobile-back-btn" onClick={()=>setSelId(null)}>← Proyectos</button>}
             {selProj&&<span style={{width:9,height:9,borderRadius:"50%",background:selProj.color,display:"inline-block",flexShrink:0}}/>}
-            <h2>{selProj?selProj.name:showSocios?"Informe Socios":showPlan?"Plan Semanal":isMobile?"Planificador":"Selecciona un proyecto"}</h2>
+            <h2>{selProj?selProj.name:showInforme?"Informe por proyecto":showSocios?"Informe Socios":showPlan?"Plan Semanal":isMobile?"Planificador":"Selecciona un proyecto"}</h2>
             {selProj&&(()=>{
               const done=allTasks.filter(t=>t.estado==="Completado").length;
               const pct=allTasks.length>0?Math.round(done/allTasks.length*100):0;
@@ -3392,8 +3398,30 @@ function App({onSignOut, userEmail, accessToken}) {
           {showDashboard?(
             <DashboardView projects={projects.filter(p=>!p.archived)} onSelectProject={id=>{setSelId(id);setShowDashboard(false);setActiveTab("actividades");}} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowDashboard(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
           ):showSocios?(
-            <SociosView projects={projects.filter(p=>!p.archived)} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowSocios(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
-          ):showPlan?(
+            <SociosView projects={projects.filter(p=>!p.archived)} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowSocios(false);setShowInforme(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
+          ):showInforme?(()=>{
+            const opts=projects.filter(p=>!p.archived).sort((a,b)=>a.name.localeCompare(b.name,'es',{numeric:true}));
+            const cities=[...new Set(opts.map(p=>getCity(p.name)))];
+            const ip=opts.find(p=>p.id===informeProjId);
+            return(<>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18,flexWrap:"wrap"}}>
+                <label style={{fontSize:12,fontWeight:700,color:"var(--ink3)",textTransform:"uppercase",letterSpacing:0.6}}>Proyecto</label>
+                <select value={ip?ip.id:""} onChange={e=>setInformeProjId(e.target.value||null)}
+                  style={{background:"var(--white)",border:"1px solid var(--line)",borderRadius:7,padding:"8px 12px",fontSize:13.5,color:"var(--ink)",outline:"none",minWidth:280,maxWidth:"100%"}}>
+                  <option value="">— Selecciona un proyecto —</option>
+                  {cities.map(c=>(
+                    <optgroup key={c} label={c}>
+                      {opts.filter(p=>getCity(p.name)===c).map(p=><option key={p.id} value={p.id}>{getShortName(p.name)}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+                {ip&&<button className="btn btn-ghost btn-sm" onClick={()=>{setSelId(ip.id);setShowInforme(false);setActiveTab("actividades");}}>Abrir proyecto →</button>}
+              </div>
+              {ip
+                ?<InformeView key={ip.id} project={ip} onSelectTask={(taskId)=>{setSelId(ip.id);setShowInforme(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
+                :<div className="empty-state"><div className="empty-icon">📄</div><h3>Elige un proyecto</h3><p>Selecciona arriba el proyecto del que quieres ver el informe</p></div>}
+            </>);
+          })():showPlan?(
             planItems===null
               ?<div style={{padding:50,textAlign:"center",color:"var(--ink3)",fontSize:13}}>Cargando plan semanal...</div>
               :<PlanSemanalView items={planItems} onChange={updatePlan} projects={projects} onSelectTask={(projId,taskId)=>{setSelId(projId);setShowPlan(false);setActiveTab("actividades");setHighlightTaskId(taskId);}}/>
@@ -3742,7 +3770,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-10-05a";
+const APP_VERSION = "2026-10-28a";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
