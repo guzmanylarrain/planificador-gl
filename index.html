@@ -557,19 +557,19 @@ button,input,select,textarea{font-family:'IBM Plex Sans',sans-serif;cursor:point
 .soc-link{background:none;border:none;padding:4px 7px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
 .soc-link:hover{color:var(--teal);text-decoration-color:var(--teal)}
 .soc-tools-sep{width:1px;height:16px;background:var(--line);margin:0 6px}
-/* Proyecto: tarjeta con cabecera oscura (misma familia visual que la barra lateral) */
+/* Proyecto: tarjeta con cabecera gris cálida (opción B elegida el 2026-10-28; nada de negro) */
 .soc-proj{background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden}
-.soc-proj-hdr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 20px;background:var(--ink);cursor:pointer;user-select:none}
-.soc-proj-hdr .soc-arrow{color:#8a8780}
-.soc-proj-name{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:700;color:#f4f2ed;line-height:1.2}
-.soc-proj-city{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:#9b9892}
-.soc-proj-stats{margin-left:auto;font-size:12.5px;color:#c0bdb6;white-space:nowrap}
-.soc-proj-stats .over{color:#f0a99e;font-weight:600}
-.soc-proj-body{padding:14px 16px 16px;background:var(--bg)}
+.soc-proj-hdr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 20px;background:var(--bg2);border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+.soc-proj-hdr .soc-arrow{color:var(--ink3)}
+.soc-proj-name{font-family:'Libre Baskerville',serif;font-size:18px;font-weight:700;color:var(--ink);line-height:1.2}
+.soc-proj-city{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:var(--ink3)}
+.soc-proj-stats{margin-left:auto;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.soc-proj-stats .over{color:var(--red);font-weight:600}
+.soc-proj-body{padding:14px 16px 16px;background:var(--white)}
 /* Actividad: recuadro interior con banda de título */
 .soc-act{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px;background:var(--white)}
 .soc-act:last-child{margin-bottom:0}
-.soc-act-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+.soc-act-hdr{display:flex;align-items:center;gap:10px;padding:9px 16px;background:var(--bg);border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
 .soc-act.closed .soc-act-hdr{border-bottom:none}
 .soc-arrow{font-size:9px;color:var(--ink3);transition:transform 0.15s;width:11px;flex-shrink:0;display:inline-block}
 .soc-arrow.open{transform:rotate(90deg)}
@@ -3900,7 +3900,7 @@ function ResetPasswordScreen({accessToken, onDone}) {
 
 // Version visible en el login. Sirve para saber si una pestana corre el codigo actual o uno
 // viejo (una pestana abierta sigue con el codigo con que se cargo hasta un Ctrl+F5).
-const APP_VERSION = "2026-10-28e";
+const APP_VERSION = "2026-10-28f";
 
 // URL canonica de la app para los enlaces de correo (recuperacion de contrasena). No se deriva
 // de la pestana: el 14-sep-2026 una pestana parada en la raiz del dominio mando
